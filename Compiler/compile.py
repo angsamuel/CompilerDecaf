@@ -1,6 +1,6 @@
 import sys
-import lexical
 import lex
+import parser
 
 def compile(fname):
     inputFile = open(fname, "r")
@@ -8,7 +8,12 @@ def compile(fname):
 
     fileContents = inputFile.read()
     tokenList = lex.buildTokenList(fileContents)
-    lex.printTokens(tokenList)
+    
+    #lex.printTokens(tokenList)
+
+    parser.parseTokenList(tokenList)
+
+
     # for t in tokenList:
     #     print(t.name,t.line,t.colStart,t.colEnd)
     # lex.writeTokens(outFileName,tokenList)
