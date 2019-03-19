@@ -79,8 +79,26 @@ def checkFormals():
 def checkStmtBlock():
     global tokenList
     global index
-    return True
+    originalIndex = index
+    if checkLCurly(): #we must have a curly brace
+        while checkVariableDecl():
+            keep = "checking"
 
+        doneCheckingStmts = False
+        while not doneCheckingStmts:
+            if not checkStmt():
+                doneCheckingStmts = True
+                if checkRCurly():
+                    return True
+                else 
+                    index = originalIndex
+                    return False
+    else:
+        index = originalIndex
+        return False
+
+
+#WE STOPPPED HERE
 def checkStmt():
     global tokenList
     global index
