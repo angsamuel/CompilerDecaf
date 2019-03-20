@@ -124,10 +124,14 @@ def checkReturnStmt():
     global index
     return True
 
+#check break value
 def checkBreakStmt():
     global tokenList
     global index
-    return True
+    if tokenList[index].name == "break" and tokenList[index+1] == ";":
+        index+=2
+        return True
+    return False
 
 def checkPrintStmt():
     global tokenList
@@ -135,9 +139,41 @@ def checkPrintStmt():
     return True
 
 def checkExpr():
+    starters = ["(", "!"]
     global tokenList
     global index
-    return True
+    originalIndex = index
+    completedSingleExpr = False
+    if checkLParen():
+        if checkExpr(): #call down
+            if checkRParen():
+                completedSingleExpr = True
+            else:
+                index = originalIndex
+                return False
+        return False
+    elif checkExMark():
+        return checkExpr()
+    elif checkMinus():
+        return checkExpr()
+    elif checkThis():
+        completedSingleExpr = True
+    elif checkConstant():
+        completedSingleExpr = True
+    elif checkLValue():
+        completedSingleExpr = True
+
+    #if we completed something
+    if completedSingleExpr:
+        g = 1
+        #check next position for one of the symbols
+        if checkMiddleExprOp():
+            return checkExpr()
+        else:
+            return True
+    else:
+        index = originalIndex
+        return False
 
 def checkLValue():
     global index
@@ -231,3 +267,36 @@ def checkRCurly():
         index += 1
         return True
     return False
+
+def checkExMark():
+    global tokenList
+    global index
+    if tokenList[index].name == "!":
+        index += 1
+        return True
+    return False
+
+def checkThis():
+    global tokenList
+    global index
+    if tokenList[index].name == "this":
+        index += 1
+        return True
+    return False
+
+def checkMiddleExprOp():
+    global tokenList
+    global index
+    middleOps = ["+","-","*","/"."%","<","<=",">",">=","==","!=", "&&","||"]
+    if tokenList[index].name in middleOps:
+        index += 1
+        return True
+    return False
+
+def checkMinus():
+    global tokenList
+    global index
+    if tokenList[index].name == "-":
+        index += 1
+        return True
+    return False    
