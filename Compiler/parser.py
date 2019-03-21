@@ -21,23 +21,21 @@ def parseTokenList(_tokenList):
     global index
     tokenList = _tokenList
     index = 0
-
     while index < len(tokenList):
         irObject = checkDecl()
         if irObject.finished:
             ir.append(irObject)
-
     printAST()
 
 def checkDecl():
     global tokenList
     global index
-    #functionDecl = checkFunctionDecl()
-    #if functionDecl.finished:
-    #    return functionDecl
-    #else:
-    variableDecl = checkVariableDecl()
-    return variableDecl
+    functionDecl = checkFunctionDecl()
+    if functionDecl.finished:
+        return functionDecl
+    else:
+        variableDecl = checkVariableDecl()
+        return variableDecl
 
 def checkVariableDecl():
     global tokenList
@@ -82,7 +80,7 @@ def checkVariable():
 def checkType():
     global tokenList
     global index
-    types = ["int", "double", "bool","string"]
+    types = ["int", "double", "bool","string","void"]
     typeClass = TypeClass()
     if tokenList[index].text in types:
         typeClass.name = tokenList[index].text
@@ -94,20 +92,58 @@ def checkFunctionDecl():
     global tokenList
     global index
     originalIndex = index
-    if (checkVoid() or checkType()) and checkIdent() and checkLParen() and checkRParen() and checkStmtBlock():
-        return True
+    functionDecl = FunctionDeclClass()
+    
+    #get our type
+    typeClass = checkType()
+    if typeClass.finished:
+        functionDecl.typeClass = typeClass
     else:
         index = originalIndex
-        return False
+        return functionDecl
 
+    #get our ident
+    identClass = checkIdent()
+    if identClass.finished:
+        functionDecl.ident = identClass
+    else:
+        index = originalIndex
+        return functionDecl
 
-def checkFormals():
+    #check LParent
+    if not checkLParen():
+        index = originalIndex
+        return functionDecl
+
+    functionDecl.formals = checkFormals() 
+
+    #check RParen
+    if not checkRParen():
+        index = originalIndex
+        return functionDecl
+
+    if not checkLCurly():
+        index = originalIndex
+        return functionDecl
+
+    #functionDecl.stmtBlock = checkStmtBlock() #this is where we need to work from next
+
+    if not checkRCurly():
+        index = originalIndex
+        return functionDecl
+
+    functionDecl.finished = True #we have everything we need
+    return functionDecl
+
+def checkFormals(): #returns a variabls list
     global tokenList
     global index
     originalIndex = index
+    variablesList = [] #list of parameters we'll return 
     doneWithFormals = False
     while not doneWithFormals:
         #if don't have a variable then we've struck an error
+        variableClass
         if not checkVariable():
             doneWithFormals = True
             index = originalIndex

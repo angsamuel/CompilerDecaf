@@ -25,6 +25,10 @@ class VariableClass(IRObject):
     	self.identClass.printMyStuff(tabs)
 
 
+class StmtBlockClass(IRObject):
+    name = ""
+
+
 class VariableDeclClass(IRObject):
     variableClass = VariableClass()
     def printMyStuff(self,tabs):
@@ -33,4 +37,12 @@ class VariableDeclClass(IRObject):
 
 class FunctionDeclClass(IRObject):
     name = ""
+    typeClass = TypeClass()
+    ident = IdentClass()
+    formalsList = [] #list of variables
+    stmtBlock = StmtBlockClass()
+
+
+
+
 
