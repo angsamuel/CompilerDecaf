@@ -10,7 +10,8 @@ def compile(fname):
     tokenList = lex.buildTokenList(fileContents)
     
     #lex.printTokens(tokenList)
-
+    #for t in tokenList:
+        #print(t.text)
     parser.parseTokenList(tokenList)
 
 

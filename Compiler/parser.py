@@ -1,9 +1,19 @@
 from token import Token
 import parserClasses
+from parserClasses import *
 
 tokenList = []
 index = 0
 ir = [] #intermediate representation
+tabCount = 0
+
+def printAST():
+    global tabCount
+    print("Program:")
+    tabCount = 1
+    for thing in ir:
+        thing.printMyStuff(tabCount)
+
 
 
 def parseTokenList(_tokenList):
@@ -13,44 +23,72 @@ def parseTokenList(_tokenList):
     index = 0
 
     while index < len(tokenList):
-        checkDecl()
+        irObject = checkDecl()
+        if irObject.finished:
+            ir.append(irObject)
+
+    printAST()
 
 def checkDecl():
     global tokenList
     global index
-    index += 1
-    return True
+    #functionDecl = checkFunctionDecl()
+    #if functionDecl.finished:
+    #    return functionDecl
+    #else:
+    variableDecl = checkVariableDecl()
+    return variableDecl
 
 def checkVariableDecl():
     global tokenList
     global index
     originalIndex = index
-    if checkVariable() and checkSemiColon():
-        return True
-    else:
+
+    #create new variable decl
+    variableDecl = VariableDeclClass()
+
+    #check for a variable
+    variable = checkVariable()
+
+    #if we got a var, and a semicolon, add the var and finish
+    if variable.finished and checkSemiColon():
+        variableDecl.variableClass = variable
+        variableDecl.finished = True
+    else: #else we gotta backtrack
         index = originalIndex
-        return False
+    
+    return variableDecl
+
 
 def checkVariable():
     global tokenList
     global index
     originalIndex = index
-    if checkType() and checkIdent():
-        return True
+    variable = VariableClass()
+    
+    typeClass = checkType()
+
+    if typeClass.finished:
+        ident = checkIdent()
+        if ident.finished:
+            variable.typeClass = typeClass
+            variable.identClass = ident
+            variable.finished = True
     else:
-        index = originalIndex
-        return False
+        index = originalIndex    
+    return variable
 
 
 def checkType():
     global tokenList
     global index
     types = ["int", "double", "bool","string"]
-    if tokenList[index].name in types:
+    typeClass = TypeClass()
+    if tokenList[index].text in types:
+        typeClass.name = tokenList[index].text
+        typeClass.finished = True
         index += 1
-        return True
-    else:
-        return False
+    return typeClass
 
 def checkFunctionDecl():
     global tokenList
@@ -93,7 +131,7 @@ def checkStmtBlock():
                 doneCheckingStmts = True
                 if checkRCurly():
                     return True
-                else 
+                else: 
                     index = originalIndex
                     return False
     else:
@@ -179,11 +217,6 @@ def checkExpr():
         return False
 
 def checkLValue():
-    global index
-    global tokenList
-    if "Identifier" in tokenList[index].flavor:
-        index += 1
-        return True
     return False
 
 def checkCall():
@@ -229,12 +262,19 @@ def checkRParen():
     return False
 
 def checkIdent():
-    return checkLValue()
+    global index
+    global tokenList
+    ident = IdentClass()
+    if "Identifier" in tokenList[index].flavor:
+        ident.name = tokenList[index].text
+        ident.finished = True
+        index += 1
+    return ident
 
 def checkSemiColon():
     global tokenList
     global index
-    if tokenList[index].name == ";":
+    if tokenList[index].text == ";":
         index+=1
         return True
     return False
@@ -290,7 +330,7 @@ def checkThis():
 def checkMiddleExprOp():
     global tokenList
     global index
-    middleOps = ["+","-","*","/"."%","<","<=",">",">=","==","!=", "&&","||"]
+    middleOps = ["+","-","*","/","%","<","<=",">",">=","==","!=", "&&","||"]
     if tokenList[index].name in middleOps:
         index += 1
         return True
