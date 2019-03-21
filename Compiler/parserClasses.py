@@ -24,8 +24,14 @@ class VariableClass(IRObject):
     	self.typeClass.printMyStuff(tabs)
     	self.identClass.printMyStuff(tabs)
 
+class StmtClass(IRObject):
+    name = ""
+
 class StmtBlockClass(IRObject):
     name = ""
+    variableDecls = []
+    stmts = []
+
 
 class VariableDeclClass(IRObject):
     variableClass = VariableClass()
@@ -44,8 +50,11 @@ class FunctionDeclClass(IRObject):
     def printMyStuff(self,tabs):
         print(self.mtabs(tabs) + "FuncDecl:")
         print(self.mtabs(tabs+1) + "(return type)" + " Type: " + self.typeClass.name)
-        for varDecl in self.formalsList:
+        for parameter in self.formalsList:
             print(self.mtabs(tabs+1) + "(formals)" + " VarDecl:")
+            parameter.printMyStuff(tabs+2)
+        print(self.mtabs(tabs+1) + "(body)" + " StmtBlock:" + str(len(self.stmtBlock.variableDecls)))
+        for varDecl in self.stmtBlock.variableDecls:
             varDecl.printMyStuff(tabs+2)
 
 

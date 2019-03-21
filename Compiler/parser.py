@@ -14,8 +14,6 @@ def printAST():
     for thing in ir:
         thing.printMyStuff(tabCount)
 
-
-
 def parseTokenList(_tokenList):
     global tokenList
     global index
@@ -25,6 +23,9 @@ def parseTokenList(_tokenList):
         irObject = checkDecl()
         if irObject.finished:
             ir.append(irObject)
+        else: 
+            #we had an error 
+            index += 1
     printAST()
 
 def checkDecl():
@@ -47,6 +48,7 @@ def checkVariableDecl():
 
     #check for a variable
     variable = checkVariable()
+
 
     #if we got a var, and a semicolon, add the var and finish
     if variable.finished and checkSemiColon():
@@ -73,7 +75,8 @@ def checkVariable():
             variable.identClass = ident
             variable.finished = True
     else:
-        index = originalIndex    
+        index = originalIndex   
+
     return variable
 
 
@@ -123,15 +126,8 @@ def checkFunctionDecl():
         index = originalIndex
         return functionDecl
 
-    if not checkLCurly():
-        index = originalIndex
-        return functionDecl
+    functionDecl.stmtBlock = checkStmtBlock() #this is where we need to work from next
 
-    #functionDecl.stmtBlock = checkStmtBlock() #this is where we need to work from next
-
-    if not checkRCurly():
-        index = originalIndex
-        return functionDecl
 
     functionDecl.finished = True #we have everything we need
     return functionDecl
@@ -163,22 +159,30 @@ def checkStmtBlock():
     global tokenList
     global index
     originalIndex = index
-    if checkLCurly(): #we must have a curly brace
-        while checkVariableDecl():
-            keep = "checking"
+    stmtBlockClass = StmtBlockClass()
+    if not checkLCurly():
+        return stmtBlockClass
 
-        doneCheckingStmts = False
-        while not doneCheckingStmts:
-            if not checkStmt():
-                doneCheckingStmts = True
-                if checkRCurly():
-                    return True
-                else: 
-                    index = originalIndex
-                    return False
-    else:
-        index = originalIndex
-        return False
+    #get any number of variables declarations
+    doneWithVariableDecls = False
+    while not doneWithVariableDecls:
+        variableDecl = checkVariableDecl()
+        if variableDecl.finished:
+            stmtBlockClass.variableDecls.append(variableDecl)
+        else:
+            doneWithVariableDecls = True
+
+
+
+    #get any number of statements
+
+    if not checkRCurly():
+        return stmtBlockClass
+
+    #we closed our curly, return complete stmt block
+    stmtBlockClass.finished = True
+    return stmtBlockClass
+
 
 
 #WE STOPPPED HERE
