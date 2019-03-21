@@ -80,7 +80,7 @@ def checkVariable():
 def checkType():
     global tokenList
     global index
-    types = ["int", "double", "bool","string","void"]
+    types = ["int", "double", "bool","string", "void"]
     typeClass = TypeClass()
     if tokenList[index].text in types:
         typeClass.name = tokenList[index].text
@@ -91,6 +91,7 @@ def checkType():
 def checkFunctionDecl():
     global tokenList
     global index
+
     originalIndex = index
     functionDecl = FunctionDeclClass()
     
@@ -115,7 +116,7 @@ def checkFunctionDecl():
         index = originalIndex
         return functionDecl
 
-    functionDecl.formals = checkFormals() 
+    functionDecl.formalsList = checkFormals() 
 
     #check RParen
     if not checkRParen():
@@ -139,19 +140,24 @@ def checkFormals(): #returns a variabls list
     global tokenList
     global index
     originalIndex = index
+
     variablesList = [] #list of parameters we'll return 
+    
     doneWithFormals = False
     while not doneWithFormals:
         #if don't have a variable then we've struck an error
-        variableClass
-        if not checkVariable():
-            doneWithFormals = True
-            index = originalIndex
-            return False
+        variableClass = checkVariable()
+        if variableClass.finished and variableClass.typeClass.name != "void":
+            variablesList.append(variableClass)
         else:
-            if not checkComma():
-                doneWithFormals = True
-    return True
+            doneWithFormals = True
+        
+        if checkComma():
+            doneWithFormals = False
+        else:
+            doneWithFormals = True
+
+    return variablesList
 
 def checkStmtBlock():
     global tokenList
@@ -278,13 +284,12 @@ def checkConstant():
     else:   
         return False
 
-
 #Helpers-----------------------------
 
 def checkLParen():
     global index
     global tokenList
-    if tokenList[L].name == "(":
+    if tokenList[index].text == "(":
         index+=1
         return True
     return False
@@ -292,7 +297,7 @@ def checkLParen():
 def checkRParen():
     global index
     global tokenList
-    if tokenList[index].name == ")":
+    if tokenList[index].text == ")":
         index += 1
         return True
     return False
@@ -318,7 +323,7 @@ def checkSemiColon():
 def checkVoid():
     global tokenList
     global index
-    if tokenList[index].name == "void":
+    if tokenList[index].text == "void":
         index += 1
         return True
     return False
@@ -326,7 +331,7 @@ def checkVoid():
 def checkComma():
     global tokenList
     global index
-    if tokenList[index].name == ",":
+    if tokenList[index].text == ",":
         index += 1
         return True
     return False
@@ -334,7 +339,7 @@ def checkComma():
 def checkLCurly():
     global tokenList
     global index
-    if tokenList[index].name == "{":
+    if tokenList[index].text == "{":
         index += 1
         return True
     return False
@@ -342,7 +347,7 @@ def checkLCurly():
 def checkRCurly():
     global tokenList
     global index
-    if tokenList[index].name == "}":
+    if tokenList[index].text == "}":
         index += 1
         return True
     return False
@@ -350,7 +355,7 @@ def checkRCurly():
 def checkExMark():
     global tokenList
     global index
-    if tokenList[index].name == "!":
+    if tokenList[index].text == "!":
         index += 1
         return True
     return False
@@ -358,7 +363,7 @@ def checkExMark():
 def checkThis():
     global tokenList
     global index
-    if tokenList[index].name == "this":
+    if tokenList[index].text == "this":
         index += 1
         return True
     return False
@@ -367,7 +372,7 @@ def checkMiddleExprOp():
     global tokenList
     global index
     middleOps = ["+","-","*","/","%","<","<=",">",">=","==","!=", "&&","||"]
-    if tokenList[index].name in middleOps:
+    if tokenList[index].text in middleOps:
         index += 1
         return True
     return False
@@ -375,7 +380,7 @@ def checkMiddleExprOp():
 def checkMinus():
     global tokenList
     global index
-    if tokenList[index].name == "-":
+    if tokenList[index].text == "-":
         index += 1
         return True
     return False    
