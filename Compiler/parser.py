@@ -1,7 +1,10 @@
 from token import Token
+import parserClasses
 
 tokenList = []
 index = 0
+ir = [] #intermediate representation
+
 
 def parseTokenList(_tokenList):
     global tokenList
