@@ -24,8 +24,8 @@ def parseTokenList(_tokenList):
         if irObject.finished:
             ir.append(irObject)
         else: 
-            #we had an error 
-            index += 1
+            #we had an error
+            index += 1 #we should halt execution and dig up the error but until then let's just skip ahead
     printAST()
 
 def checkDecl():
@@ -129,6 +129,7 @@ def checkFunctionDecl():
     functionDecl.stmtBlock = checkStmtBlock() #this is where we need to work from next
 
 
+
     functionDecl.finished = True #we have everything we need
     return functionDecl
 
@@ -172,6 +173,15 @@ def checkStmtBlock():
         else:
             doneWithVariableDecls = True
 
+    doneWithStmts = False
+
+    while not doneWithStmts:
+        stmt = checkStmt()
+
+        if stmt.finished:
+            stmtBlockClass.stmts.append(stmt)
+        else:
+            doneWithStmts = True
 
 
     #get any number of statements
@@ -189,7 +199,14 @@ def checkStmtBlock():
 def checkStmt():
     global tokenList
     global index
-    return True
+    stmt = StmtClass()
+    stmt.expr = checkExpr()
+    if stmt.expr.finished:
+        if checkSemiColon():
+            stmt.finished = True
+
+    return stmt
+    
 
 def checkIfStmt():
     global tokenList
@@ -226,41 +243,119 @@ def checkPrintStmt():
     return True
 
 def checkExpr():
-    starters = ["(", "!"]
+    #check pre characters
     global tokenList
     global index
     originalIndex = index
-    completedSingleExpr = False
-    if checkLParen():
-        if checkExpr(): #call down
-            if checkRParen():
-                completedSingleExpr = True
-            else:
-                index = originalIndex
-                return False
-        return False
-    elif checkExMark():
-        return checkExpr()
-    elif checkMinus():
-        return checkExpr()
-    elif checkThis():
-        completedSingleExpr = True
-    elif checkConstant():
-        completedSingleExpr = True
-    elif checkLValue():
-        completedSingleExpr = True
+    exprTree = ExprTree()
+    expr = exprBuilder(exprTree)
 
-    #if we completed something
-    if completedSingleExpr:
-        g = 1
-        #check next position for one of the symbols
-        if checkMiddleExprOp():
-            return checkExpr()
+
+    return expr
+
+
+
+    #we generate a tree, and then we return the root
+
+    # expr = ExprClass()
+    # ident = checkIdent()
+
+    # if prevExpr == None:
+    #     if ident.finished: #we found a valid  ident
+    #         if checkOp():
+    #             expr.operator = tokenList[index].text
+    #             expr.leftIdent = ident
+    #             index+=1
+    #             return checkExpr(prevExpr)
+    #     else:
+    #         return ident #we failed
+    # else:
+    #     if ident.finished:
+    #         prevExpr.rightIdent = ident
+    #         #check for another op, return completed otherwise
+    #         if not checkOp():
+    #             prevExpr.finished = True
+    #             index += 1
+    #             return prevExpr
+    #         else: 
+    #             #we need to make a new expr out of the new operator, if op code is GREATER
+    #             expr.operator = tokenList[index].text
+    #             expr.leftIdent = ident
+
+    #             prevExpr.rightIdent = None
+    #             prevExpr.rightExpr = checkExpr(expr)
+
+    #             if prevExpr.rightExpr.finished == True:
+    #                 prevExpr.finished = True
+    #                 return prevExpr
+
+
+#we need to increment our index here!
+def exprBuilder(exprTree):
+    global tokenList
+    global index
+    expr = ExprClass()
+    buildingTree = True
+    #print("START INDEX " + str(index))
+
+    while buildingTree:
+        if exprTree.root == None:
+            exprTree.root = ExprClass()
+            exprTree.nicoRobin = exprTree.root
+        #now let's start
+        ident = checkIdent()
+        if ident.finished == True:
+            if not checkOp(): #we don't find another operator
+                #if we have a parent, set their right child to the ident
+                if exprTree.nicoRobin.parent != None:
+                    exprTree.nicoRobin.parent.rightChild = ident
+                else: #otherwise, make the root the ident, we might need an error here
+                    exprTree.root = ident
+
+                exprTree.root.finished = True
+                buildingTree = False #we done
+            else: #we found another operator
+                if exprTree.nicoRobin.parent == None or opLevel(tokenList[index].text) > opLevel(exprTree.nicoRobin.parent.operator): #we're higher priority already, or no parent
+                    exprTree.nicoRobin.operator = tokenList[index].text
+                    exprTree.nicoRobin.leftChild = ident
+                    exprTree.nicoRobin.rightChild = ExprClass()
+                    exprTree.nicoRobin.rightChild.parent = exprTree.nicoRobin
+                    exprTree.nicoRobin = exprTree.nicoRobin.rightChild
+                    index += 1
+                else:
+                    exprTree.nicoRobin.parent.rightChild = ident 
+                    exprTree.nicoRobin.operator = tokenList[index].text
+                    #move up until we find one which is better than us
+                    interestExpr = exprTree.nicoRobin.parent
+                    while(interestExpr.parent != None and opLevel(exprTree.nicoRobin.operator) <= opLevel(interestExpr.parent.operator) ):
+                        interestExpr = interestExpr.parent
+
+                    #get new nodes parent, tell parent new child is new node
+                    exprTree.nicoRobin.parent = interestExpr.parent
+
+                    if exprTree.nicoRobin.parent != None:
+                        exprTree.nicoRobin.parent.rightChild = exprTree.nicoRobin
+
+                    #make replaced node child, tell child we're the new parent
+                    exprTree.nicoRobin.leftChild = interestExpr
+                    exprTree.nicoRobin.leftChild.parent = exprTree.nicoRobin
+
+                    if exprTree.nicoRobin.parent == None:
+                        #yoinks scoob, like, we're the new root
+                        exprTree.root = exprTree.nicoRobin
+
+                    exprTree.nicoRobin.rightChild = ExprClass()
+                    exprTree.nicoRobin.rightChild.parent = exprTree.nicoRobin
+                    exprTree.nicoRobin = exprTree.nicoRobin.rightChild
+
+                    index += 1
         else:
-            return True
-    else:
-        index = originalIndex
-        return False
+            buildingTree = False
+
+    #print("END INDEX " + str(index))
+    return exprTree.root
+
+
 
 def checkLValue():
     return False
@@ -279,14 +374,22 @@ def checkActuals():
 def checkConstant():
     global index
     global tokenList
+    constant = ConstantClass()
+
     if "Constant" in tokenList[index].flavor:
+        constant.name = tokenList[index].text
+        constant.constantType = tokenList[index].flavor
+        constant.finished = True 
         index += 1
-        return True
+        return constant
     elif "null" in tokenList[index].flavor:
+        constant.finished = True
+        constant.name = "null"
+        constant.constantType = "null"
         index += 1
-        return True
+        return constant
     else:   
-        return False
+        return constant
 
 #Helpers-----------------------------
 
@@ -319,7 +422,9 @@ def checkIdent():
 def checkSemiColon():
     global tokenList
     global index
+    print(tokenList[index].text + " this is it")
     if tokenList[index].text == ";":
+        print("WOWOWOWOWOW")
         index+=1
         return True
     return False
@@ -388,3 +493,42 @@ def checkMinus():
         index += 1
         return True
     return False    
+
+def checkOp():
+    global tokenList
+    global index
+    allOps = ["=","||","&&","==","!=","<","<=",">",">=","+","-","*","/","%","!"]
+    if tokenList[index].text in allOps:
+        return True
+    else:
+        return False
+
+
+def opLevel(op):
+    level0 = ["="]
+    level1 = ["||"]
+    level2 = ["&&"]
+    level3 = ["==","!="]
+    level4 = ["<","<=",">",">="]
+    level5 = ["+","-"]
+    level6 = ["*","/","%"]
+    level7 = ["!"]
+    if op in level0:
+        return 0
+    elif op in level1:
+        return 1
+    elif op in level2:
+        return 2
+    elif op in level3:
+        return 3
+    elif op in level4:
+        return 4
+    elif op in level5:
+        return 5
+    elif op in level6:
+        return 6
+    elif op in level7:
+        return 7
+    else:
+        return -1
+

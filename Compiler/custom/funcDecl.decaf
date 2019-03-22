@@ -1,3 +1,4 @@
 int func(int a, int b, double c){
 	int lsp;
+	a = b + c * d - e / f;
 }
