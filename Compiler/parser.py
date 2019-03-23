@@ -235,10 +235,10 @@ def checkStmt():
         return whileStmt
 
 
-    # #check for statement
-    # forStmt = checkForStmt()
-    # if forStmt.finished:
-    #     return forStmt
+    #check for statement
+    forStmt = checkForStmt()
+    if forStmt.finished:
+        return forStmt
 
     # #check breakstmt
     breakStmt = checkBreakStmt()
@@ -400,7 +400,60 @@ def checkReturnStmt():
 def checkForStmt():
     global tokenList
     global index
-    return True
+    originalIndex = index
+    forStmt = ForStmtClass()
+    if tokenList[index].text == "for":
+        index += 1
+        if not checkLParen():
+            index = originalIndex
+            return forStmt
+
+
+        leftExpr = checkExpr()
+        if leftExpr.finished:
+            forStmt.leftExpr = leftExpr
+
+
+        if not checkSemiColon():
+            index = originalIndex
+            return forStmt
+
+        middleExpr = checkExpr()
+
+        if middleExpr.finished:
+            forStmt.midExpr = middleExpr
+        else:
+            index = originalIndex
+            return forStmt
+
+        if not checkSemiColon():
+            index = originalIndex
+            return forStmt
+
+        rightExpr = checkExpr()
+
+        if rightExpr.finished:
+            forStmt.rightExpr = rightExpr
+
+        if not checkRParen():
+            index = originalIndex
+            return forStmt
+
+        stmt = checkStmt()
+
+        if stmt.finished:
+            forStmt.stmt = stmt
+            forStmt.finished = True
+
+    return forStmt
+
+
+
+
+
+
+
+
 
 #check break value
 def checkBreakStmt():

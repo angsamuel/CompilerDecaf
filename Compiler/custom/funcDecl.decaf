@@ -1,17 +1,7 @@
 int func(){
 
-	if(a*b){
+	for(i = 1; i = 1; i = 1){
 		lsp = b;
 	}
-
-	if(a*b){
-		lsp = b;
-	}
-
-	while(a*b){
-		lsp = b;
-	}
-
-	Print(a,b,c);
 
 }

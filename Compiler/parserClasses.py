@@ -165,6 +165,34 @@ class PrintStmtClass(StmtClass):
             print(self.mtabs(tabs+1) + "(args)")
             expr.printMyStuff(tabs+1)
 
+class ForStmtClass(StmtClass):
+    leftExpr = ExprClass()
+    midExpr = ExprClass()
+    rightExpr = ExprClass()
+    stmt = StmtClass()
+    def printMyStuff(self,tabs):
+        print(self.mtabs(tabs) + "PrintStmt:")
+        
+        print(self.mtabs(tabs+1) + "(init)")
+        if self.leftExpr.finished:
+            self.leftExpr.printMyStuff(tabs+1)
+        else:
+            print(self.mtabs(tabs+1) + "Empty:")
+
+        print(self.mtabs(tabs+1) + "(test)")
+        self.midExpr.printMyStuff(tabs+1)
+
+        print(self.mtabs(tabs+1) + "(step)")
+        if self.rightExpr.finished:
+            self.rightExpr.printMyStuff(tabs+1)
+        else:
+            print(self.mtabs(tabs+1) + "Empty:")
+
+        print(self.mtabs(tabs+1) + "(body)")
+        self.stmt.printMyStuff(tabs+1)
+
+
+
 
 
 
