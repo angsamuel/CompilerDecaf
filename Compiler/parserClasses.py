@@ -28,6 +28,7 @@ class VariableClass(IRObject):
     	self.typeClass.printMyStuff(tabs)
     	self.identClass.printMyStuff(tabs)
 
+ 
 
 
 class StmtBlockClass(IRObject):
@@ -132,6 +133,16 @@ class IfStmtClass(StmtClass):
         if self.elseStmt.finished:
             print(self.mtabs(tabs+1) + "(else)")
             self.elseStmt.printMyStuff(tabs+1)
+
+class WhileStmtClass(StmtClass):
+    bodyStmt = StmtClass()
+    def printMyStuff(self, tabs):
+        print(self.mtabs(tabs)+"WhileStmt:")
+        print(self.mtabs(tabs+1) + "(test)")
+        self.expr.printMyStuff(tabs+1)
+        print(self.mtabs(tabs+1)+"(body)")
+        self.bodyStmt.printMyStuff(tabs+1)
+
 
 
 class ExprTree():

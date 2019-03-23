@@ -230,16 +230,21 @@ def checkStmt():
     else:
         index = originalIndex
 
+    whileStmt = checkWhileStmt()
+    if whileStmt.finished:
+        return whileStmt
+
     stmtBlock = checkStmtBlock()
     if stmtBlock.finished:
         return stmtBlock
     else:
         index = originalIndex
 
-    # #check while statement
-    # whileStmt = checkWhileStmt()
-    # if whileStmt.finished:
-    #     return whileStmt
+    #check while statement
+
+    # else:
+    #     index = originalIndex
+
 
     # #check for statement
     # forStmt = checkForStmt()
@@ -267,9 +272,30 @@ def checkStmt():
     #     return stmtBlock
 
 
-
     return stmt
-    
+ 
+def checkWhileStmt():
+    global tokenList
+    global index
+    originalIndex = index
+    whileStmt = WhileStmtClass()
+    if tokenList[index].text == "while":
+        index += 1
+        if checkLParen():
+            expr = checkExpr()
+            if expr.finished:
+                whileStmt.expr = expr
+                if checkRParen():
+                    bodyStmt = checkStmt()
+                    if bodyStmt.finished:
+                        whileStmt.bodyStmt = bodyStmt
+                        whileStmt.finished = True
+
+    return whileStmt
+
+
+
+
 
 def checkIfStmt():
     global tokenList
@@ -304,10 +330,6 @@ def checkIfStmt():
                 index = originalIndex
     return ifStmt
 
-def checkWhileStmt():
-    global tokenList
-    global index
-    return True
 
 def checkForStmt():
     global tokenList

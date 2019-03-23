@@ -4,4 +4,12 @@ int func(){
 		lsp = b;
 	}
 
+	if(a*b){
+		lsp = b;
+	}
+
+	while(a*b){
+		lsp = b;
+	}
+
 }
