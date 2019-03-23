@@ -249,45 +249,8 @@ def checkExpr():
     originalIndex = index
     exprTree = ExprTree()
     expr = exprBuilder(exprTree)
-
-
     return expr
 
-
-
-    #we generate a tree, and then we return the root
-
-    # expr = ExprClass()
-    # ident = checkIdent()
-
-    # if prevExpr == None:
-    #     if ident.finished: #we found a valid  ident
-    #         if checkOp():
-    #             expr.operator = tokenList[index].text
-    #             expr.leftIdent = ident
-    #             index+=1
-    #             return checkExpr(prevExpr)
-    #     else:
-    #         return ident #we failed
-    # else:
-    #     if ident.finished:
-    #         prevExpr.rightIdent = ident
-    #         #check for another op, return completed otherwise
-    #         if not checkOp():
-    #             prevExpr.finished = True
-    #             index += 1
-    #             return prevExpr
-    #         else: 
-    #             #we need to make a new expr out of the new operator, if op code is GREATER
-    #             expr.operator = tokenList[index].text
-    #             expr.leftIdent = ident
-
-    #             prevExpr.rightIdent = None
-    #             prevExpr.rightExpr = checkExpr(expr)
-
-    #             if prevExpr.rightExpr.finished == True:
-    #                 prevExpr.finished = True
-    #                 return prevExpr
 
 
 #we need to increment our index here!
@@ -296,34 +259,44 @@ def exprBuilder(exprTree):
     global index
     expr = ExprClass()
     buildingTree = True
+    firstLoop = True
     #print("START INDEX " + str(index))
 
+
     while buildingTree:
+        hardValue = None
+
         if exprTree.root == None:
             exprTree.root = ExprClass()
             exprTree.nicoRobin = exprTree.root
         #now let's start
-        ident = checkIdent()
-        if ident.finished == True:
+        hardValue = checkIdent()
+
+        if not firstLoop and hardValue.finished == False:
+            hardValue = checkConstant()
+
+
+
+        if hardValue.finished == True:
             if not checkOp(): #we don't find another operator
                 #if we have a parent, set their right child to the ident
                 if exprTree.nicoRobin.parent != None:
-                    exprTree.nicoRobin.parent.rightChild = ident
+                    exprTree.nicoRobin.parent.rightChild = hardValue
                 else: #otherwise, make the root the ident, we might need an error here
-                    exprTree.root = ident
+                    exprTree.root = hardValue
 
                 exprTree.root.finished = True
                 buildingTree = False #we done
             else: #we found another operator
                 if exprTree.nicoRobin.parent == None or opLevel(tokenList[index].text) > opLevel(exprTree.nicoRobin.parent.operator): #we're higher priority already, or no parent
                     exprTree.nicoRobin.operator = tokenList[index].text
-                    exprTree.nicoRobin.leftChild = ident
+                    exprTree.nicoRobin.leftChild = hardValue
                     exprTree.nicoRobin.rightChild = ExprClass()
                     exprTree.nicoRobin.rightChild.parent = exprTree.nicoRobin
                     exprTree.nicoRobin = exprTree.nicoRobin.rightChild
                     index += 1
                 else:
-                    exprTree.nicoRobin.parent.rightChild = ident 
+                    exprTree.nicoRobin.parent.rightChild = hardValue 
                     exprTree.nicoRobin.operator = tokenList[index].text
                     #move up until we find one which is better than us
                     interestExpr = exprTree.nicoRobin.parent
@@ -351,6 +324,7 @@ def exprBuilder(exprTree):
                     index += 1
         else:
             buildingTree = False
+        firstLoop = False
 
     #print("END INDEX " + str(index))
     return exprTree.root
@@ -378,7 +352,7 @@ def checkConstant():
 
     if "Constant" in tokenList[index].flavor:
         constant.name = tokenList[index].text
-        constant.constantType = tokenList[index].flavor
+        constant.constantType = tokenList[index].flavor.replace("T_","")
         constant.finished = True 
         index += 1
         return constant

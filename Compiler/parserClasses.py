@@ -115,6 +115,9 @@ class ExprTree():
 class ConstantClass(IRObject):
     name = ""
     constantType = ""
+    def printMyStuff(self,tabs):
+        print(self.mtabs(tabs) + self.constantType + ": " + self.name)
+
 
 
 
