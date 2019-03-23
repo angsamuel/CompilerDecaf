@@ -156,6 +156,17 @@ class ReturnStmtClass(StmtClass):
         else:
             print self.mtabs(tabs+1) + "Empty:"
 
+class PrintStmtClass(StmtClass):
+    def __init__(self):
+        self.exprs = []
+    def printMyStuff(self,tabs):
+        print(self.mtabs(tabs)+"PrintStmt:")
+        for expr in self.exprs:
+            print(self.mtabs(tabs+1) + "(args)")
+            expr.printMyStuff(tabs+1)
+
+
+
 
 class ExprTree():
     root = None #ExprClass()

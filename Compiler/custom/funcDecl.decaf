@@ -12,8 +12,6 @@ int func(){
 		lsp = b;
 	}
 
-	return;
-	return lsp;
-	return a*a;
+	Print(a,b,c);
 
 }

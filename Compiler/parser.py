@@ -254,6 +254,13 @@ def checkStmt():
     else:
         index = originalIndex
 
+    #check print statement
+    printStmt = checkPrintStmt()
+    if printStmt.finished:
+        return printStmt
+    else:
+        index = originalIndex
+
     stmtBlock = checkStmtBlock()
     if stmtBlock.finished:
         return stmtBlock
@@ -268,15 +275,7 @@ def checkStmt():
 
     
 
-    # #check return statement
-    # returnStmt = checkReturnStmt()
-    # if returnStmt.finished:
-    #     return returnStmt
 
-    # #check print statement
-    # printStmt = checkPrintStmt()
-    # if printStmt.finished:
-    #     return printStmt
 
     # #check stmt block
     # stmtBlock = checkStmtBlock()
@@ -285,6 +284,42 @@ def checkStmt():
 
 
     return stmt
+
+
+
+def checkPrintStmt():
+    global tokenList
+    global index
+    printStmt = PrintStmtClass()
+    originalIndex = index
+    if tokenList[index].text == "Print":
+        index += 1
+        if checkLParen():
+            #we need to grab our expressions
+            doneWithExprs = False
+            while not doneWithExprs:
+                expr = checkExpr()
+                if expr.finished:
+                    printStmt.exprs.append(expr)
+                else:
+                    doneWithExprs = True
+                
+                if not checkComma():
+                    doneWithExprs = True
+            
+            if checkRParen() and checkSemiColon() and len(printStmt.exprs) > 0:
+                printStmt.finished = True
+
+    if printStmt.finished == False:
+        index = originalIndex
+    return printStmt
+
+
+
+
+
+
+
  
 def checkWhileStmt():
     global tokenList
@@ -377,10 +412,6 @@ def checkBreakStmt():
         breakStmt.finished =  True
     return breakStmt
 
-def checkPrintStmt():
-    global tokenList
-    global index
-    return True
 
 def checkExpr():
     #check pre characters
