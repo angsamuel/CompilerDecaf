@@ -32,8 +32,18 @@ class VariableClass(IRObject):
 
 class StmtBlockClass(IRObject):
     name = ""
-    variableDecls = []
-    stmts = []
+    
+    def __init__(self):
+        self.variableDecls = []
+        self.stmts = []
+
+    def printMyStuff(self,tabs):
+        print(self.mtabs(tabs) + "StmtBlock:")
+        for vd in self.variableDecls:
+           vd.printMyStuff(tabs+1)
+        
+        for st in self.stmts:
+            st.printMyStuff(tabs+1)
 
 
 class VariableDeclClass(IRObject):
@@ -46,8 +56,12 @@ class FunctionDeclClass(IRObject):
     name = ""
     typeClass = TypeClass()
     ident = IdentClass()
-    formalsList = [] #list of variables
+    
     stmtBlock = StmtBlockClass()
+
+    def __init__(self):
+        self.formalsList = [] #list of variables
+
     def printMyStuff(self,tabs):
         
         print(self.mtabs(tabs) + "FuncDecl:")
@@ -105,6 +119,21 @@ class StmtClass(IRObject):
     def printMyStuff(self,tabs):
         self.expr.printMyStuff(tabs)
 
+class IfStmtClass(StmtClass):
+    thenStmt = StmtClass()
+    elseStmt = StmtClass()
+    def printMyStuff(self,tabs):
+        print(self.mtabs(tabs) + "IfStmt:")
+        print(self.mtabs(tabs+1) + "(test)")
+        self.expr.printMyStuff(tabs+1)
+        if self.thenStmt.finished:
+            print(self.mtabs(tabs+1) + "(then)")
+            self.thenStmt.printMyStuff(tabs+1)
+        if self.elseStmt.finished:
+            print(self.mtabs(tabs+1) + "(else)")
+            self.elseStmt.printMyStuff(tabs+1)
+
+
 class ExprTree():
     root = None #ExprClass()
     nicoRobin = None #our active slot
@@ -117,6 +146,8 @@ class ConstantClass(IRObject):
     constantType = ""
     def printMyStuff(self,tabs):
         print(self.mtabs(tabs) + self.constantType + ": " + self.name)
+
+
 
 
 

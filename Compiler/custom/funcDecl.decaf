@@ -1,6 +1,7 @@
-int func(int a, int b, double c){
-	int lsp;
-	//a = b + c * d - e / f;
-	a = b + 2 * 3 - 4 / 5;
+int func(){
+
+	if(a*b){
+		lsp = b;
+	}
 
 }

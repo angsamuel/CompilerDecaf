@@ -1,6 +1,7 @@
 from token import Token
 import parserClasses
 from parserClasses import *
+import random
 
 tokenList = []
 index = 0
@@ -114,7 +115,7 @@ def checkFunctionDecl():
         index = originalIndex
         return functionDecl
 
-    #check LParent
+    #check LParen
     if not checkLParen():
         index = originalIndex
         return functionDecl
@@ -126,11 +127,12 @@ def checkFunctionDecl():
         index = originalIndex
         return functionDecl
 
-    functionDecl.stmtBlock = checkStmtBlock() #this is where we need to work from next
+    stmtBlock = checkStmtBlock() #this is where we need to work from next
 
+    if stmtBlock.finished:
+        functionDecl.stmtBlock = stmtBlock
+        functionDecl.finished = True #we have everything we need
 
-
-    functionDecl.finished = True #we have everything we need
     return functionDecl
 
 def checkFormals(): #returns a variabls list
@@ -157,10 +159,15 @@ def checkFormals(): #returns a variabls list
     return variablesList
 
 def checkStmtBlock():
+    randNum = random.randint(1,1000)
     global tokenList
     global index
+    #print tokenList[index].text
+
     originalIndex = index
+
     stmtBlockClass = StmtBlockClass()
+
     if not checkLCurly():
         return stmtBlockClass
 
@@ -173,21 +180,25 @@ def checkStmtBlock():
         else:
             doneWithVariableDecls = True
 
-    doneWithStmts = False
 
+    doneWithStmts = False
     while not doneWithStmts:
         stmt = checkStmt()
-
         if stmt.finished:
+            #print("HEYA")
             stmtBlockClass.stmts.append(stmt)
+            #print(len(stmtBlockClass.stmts))
+            #print(len(stmtBlockClass.stmts))
+            #print("-----")
         else:
             doneWithStmts = True
-
 
     #get any number of statements
 
     if not checkRCurly():
+        index = originalIndex
         return stmtBlockClass
+
 
     #we closed our curly, return complete stmt block
     stmtBlockClass.finished = True
@@ -200,50 +211,60 @@ def checkStmt():
     global tokenList
     global index
     stmt = StmtClass()
+    originalIndex = index
+    
     expr = checkExpr()
-    #also put a regular check smiCOlon in here
-   
-    if stmt.expr.finished:
+    if expr.finished:
         if checkSemiColon():
             stmt.expr = expr
             stmt.finished = True
             return stmt
+    else:
+        index = originalIndex
 
     #check ifstatement
 
     ifStmt = checkIfStmt()
     if ifStmt.finished:
         return ifStmt
+    else:
+        index = originalIndex
 
-    #check while statement
-    whileStmt = checkWhileStmt()
-    if whileStmt.finished:
-        return whileStmt
-
-    #check for statement
-    forStmt = checkForStmt()
-    if forStmt.finished:
-        return forStmt
-
-    #check breakstmt
-    breakStmt = checkBreakStmt()
-    if breakStmt.finished:
-        return breakStmt
-
-    #check return statement
-    returnStmt = checkReturnStmt()
-    if returnStmt.finished:
-        return returnStmt
-
-    #check print statement
-    printStmt = checkPrintStmt()
-    if printStmt.finished:
-        return printStmt
-
-    #check stmt block
     stmtBlock = checkStmtBlock()
     if stmtBlock.finished:
         return stmtBlock
+    else:
+        index = originalIndex
+
+    # #check while statement
+    # whileStmt = checkWhileStmt()
+    # if whileStmt.finished:
+    #     return whileStmt
+
+    # #check for statement
+    # forStmt = checkForStmt()
+    # if forStmt.finished:
+    #     return forStmt
+
+    # #check breakstmt
+    # breakStmt = checkBreakStmt()
+    # if breakStmt.finished:
+    #     return breakStmt
+
+    # #check return statement
+    # returnStmt = checkReturnStmt()
+    # if returnStmt.finished:
+    #     return returnStmt
+
+    # #check print statement
+    # printStmt = checkPrintStmt()
+    # if printStmt.finished:
+    #     return printStmt
+
+    # #check stmt block
+    # stmtBlock = checkStmtBlock()
+    # if stmtBlock.finished:
+    #     return stmtBlock
 
 
 
@@ -253,7 +274,35 @@ def checkStmt():
 def checkIfStmt():
     global tokenList
     global index
-    return True
+    originalIndex = index
+    ifStmt = IfStmtClass()
+    if tokenList[index].text == "if":
+        index += 1
+        if checkLParen():
+            expr = checkExpr()
+            if expr.finished:
+                ifStmt.expr = expr
+                if checkRParen():
+                    thenStmt = checkStmt()
+                    if thenStmt.finished:
+                        ifStmt.thenStmt = thenStmt
+                        ifStmt.finished = True
+    if ifStmt.finished:
+        originalIndex = index
+    else:
+        index = originalIndex
+
+    if ifStmt.finished: #now we gotta check for the else
+        if tokenList[index].text == "else":
+            index+=1
+            print("WELL NOW")
+            elseStmt = checkStmt()
+            print("WELL NOW")
+            if elseStmt.finished:
+                ifStmt.elseStmt = elseStmt
+            else: 
+                index = originalIndex
+    return ifStmt
 
 def checkWhileStmt():
     global tokenList
@@ -299,6 +348,7 @@ def checkExpr():
 def exprBuilder(exprTree):
     global tokenList
     global index
+    originalIndex = index
     expr = ExprClass()
     buildingTree = True
     firstLoop = True
@@ -366,6 +416,9 @@ def exprBuilder(exprTree):
                     index += 1
         else:
             buildingTree = False
+            #exprTree.root.finished = False
+            #index = originalIndex
+            #return exprTree.root
         firstLoop = False
 
     #print("END INDEX " + str(index))
@@ -438,9 +491,7 @@ def checkIdent():
 def checkSemiColon():
     global tokenList
     global index
-    print(tokenList[index].text + " this is it")
     if tokenList[index].text == ";":
-        print("WOWOWOWOWOW")
         index+=1
         return True
     return False
