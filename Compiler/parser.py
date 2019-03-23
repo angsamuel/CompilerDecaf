@@ -495,9 +495,13 @@ def exprBuilder(exprTree):
             exprTree.root = ExprClass()
             exprTree.nicoRobin = exprTree.root
         #now let's start
-        hardValue = checkIdent()
+        hardValue = checkCall()
 
-        if not firstLoop and hardValue.finished == False:
+        if not hardValue.finished:
+            hardValue = checkIdent()
+
+        #maybe we have a constant?
+        if hardValue.finished == False:
             hardValue = checkConstant()
 
 
@@ -512,6 +516,8 @@ def exprBuilder(exprTree):
 
                 exprTree.root.finished = True
                 buildingTree = False #we done
+                print("HEE HAW")
+                return exprTree.root
             else: #we found another operator
                 if exprTree.nicoRobin.parent == None or opLevel(tokenList[index].text) > opLevel(exprTree.nicoRobin.parent.operator): #we're higher priority already, or no parent
                     exprTree.nicoRobin.operator = tokenList[index].text
@@ -565,7 +571,51 @@ def checkLValue():
 def checkCall():
     global index
     global tokenList
-    return checkIdent() and checkLParen() and checkActuals() and checkRParen()
+    originalIndex = index
+    call = CallClass()
+
+
+
+    print "TOKEN " + tokenList[index].text
+
+    ident = checkIdent()
+
+
+    if ident.finished:
+        #print("YIKES")
+        call.ident = ident
+        if checkLParen():
+            #print("OH NO")
+            #get actuals
+            gettingActuals = True
+            while gettingActuals:
+                if checkRParen():
+                    gettingActuals = False
+                else:
+                    expr = checkExpr()
+                    if expr.finished:
+                        call.actuals.append(expr)
+                    if not checkComma():
+                        if checkRParen():
+                            gettingActuals = False
+                        else:
+                            index = originalIndex
+                            return call #error
+        else:
+            index = originalIndex
+            return call
+    else:
+        index = originalIndex
+        return call
+
+    #print("WHOOPS")
+    call.finished = True
+    #call.printMyStuff(0)
+    return call
+
+
+
+
 
 #***
 def checkActuals():

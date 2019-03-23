@@ -90,8 +90,15 @@ class ExprClass(IRObject):
         exprTypeString = ""
         if self.operator in ["="]:
             exprTypeString = "AssignExpr:"
-        elif self.operator in ["+","-","*","/"]:
+        elif self.operator in ["+","-","*","/", "%"]:
             exprTypeString = "ArithmeticExpr:"
+        elif self.operator in ["==", "!="]:
+            exprTypeString = "EqualityExpr:"
+        elif self.operator in [">","<",">=","<="]:
+            exprTypeString = "RelationalExpr:"
+        elif self.operator in ["&&" or "||"]:
+            exprTypeString = "LogicalExpr:"
+
         
         print(self.mtabs(tabs) + exprTypeString)
 
@@ -171,7 +178,7 @@ class ForStmtClass(StmtClass):
     rightExpr = ExprClass()
     stmt = StmtClass()
     def printMyStuff(self,tabs):
-        print(self.mtabs(tabs) + "PrintStmt:")
+        print(self.mtabs(tabs) + "ForStmt:")
         
         print(self.mtabs(tabs+1) + "(init)")
         if self.leftExpr.finished:
@@ -212,6 +219,15 @@ class ConstantClass(IRObject):
 
 
 
+class CallClass(IRObject):
+    ident = IdentClass()
+    def __init__(self):
+        self.actuals = []
+    def printMyStuff(self,tabs):
+        print(self.mtabs(tabs) + "Call:")
+        for actual in self.actuals:
+            print(self.mtabs(tabs+1) + "(actuals)")
+            actual.printMyStuff(tabs+1)
 
 
 
