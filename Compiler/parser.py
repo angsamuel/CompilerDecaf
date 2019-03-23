@@ -234,6 +234,26 @@ def checkStmt():
     if whileStmt.finished:
         return whileStmt
 
+
+    # #check for statement
+    # forStmt = checkForStmt()
+    # if forStmt.finished:
+    #     return forStmt
+
+    # #check breakstmt
+    breakStmt = checkBreakStmt()
+    if breakStmt.finished:
+        return breakStmt
+    else:
+        index = originalIndex
+
+    #check return statement
+    returnStmt = checkReturnStmt()
+    if returnStmt.finished:
+        return returnStmt
+    else:
+        index = originalIndex
+
     stmtBlock = checkStmtBlock()
     if stmtBlock.finished:
         return stmtBlock
@@ -246,15 +266,7 @@ def checkStmt():
     #     index = originalIndex
 
 
-    # #check for statement
-    # forStmt = checkForStmt()
-    # if forStmt.finished:
-    #     return forStmt
-
-    # #check breakstmt
-    # breakStmt = checkBreakStmt()
-    # if breakStmt.finished:
-    #     return breakStmt
+    
 
     # #check return statement
     # returnStmt = checkReturnStmt()
@@ -330,13 +342,27 @@ def checkIfStmt():
                 index = originalIndex
     return ifStmt
 
-
-def checkForStmt():
+def checkReturnStmt():
     global tokenList
     global index
-    return True
+    originalIndex = index
+    returnStmt = ReturnStmtClass()
+    if tokenList[index].text == "return":
+        index += 1
+        expr = checkExpr()
+        if expr.finished:
+            returnStmt.expr = expr
 
-def checkReturnStmt():
+    if checkSemiColon():
+        returnStmt.finished = True
+    else:
+        index = originalIndex
+
+    return returnStmt
+
+
+
+def checkForStmt():
     global tokenList
     global index
     return True
@@ -345,10 +371,11 @@ def checkReturnStmt():
 def checkBreakStmt():
     global tokenList
     global index
+    breakStmt = BreakStmtClass()
     if tokenList[index].name == "break" and tokenList[index+1] == ";":
         index+=2
-        return True
-    return False
+        breakStmt.finished =  True
+    return breakStmt
 
 def checkPrintStmt():
     global tokenList

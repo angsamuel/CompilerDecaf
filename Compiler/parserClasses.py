@@ -144,6 +144,18 @@ class WhileStmtClass(StmtClass):
         self.bodyStmt.printMyStuff(tabs+1)
 
 
+class BreakStmtClass(StmtClass):
+    def printMyStuff(self,tabs):
+        print self.mtabs(tabs) + "BreakStmt:"
+
+class ReturnStmtClass(StmtClass):
+    def printMyStuff(self,tabs):
+        print self.mtabs(tabs) + "ReturnStmt:"
+        if self.expr.finished:
+            self.expr.printMyStuff(tabs+1)
+        else:
+            print self.mtabs(tabs+1) + "Empty:"
+
 
 class ExprTree():
     root = None #ExprClass()
