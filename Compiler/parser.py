@@ -200,10 +200,52 @@ def checkStmt():
     global tokenList
     global index
     stmt = StmtClass()
-    stmt.expr = checkExpr()
+    expr = checkExpr()
+    #also put a regular check smiCOlon in here
+   
     if stmt.expr.finished:
         if checkSemiColon():
+            stmt.expr = expr
             stmt.finished = True
+            return stmt
+
+    #check ifstatement
+
+    ifStmt = checkIfStmt()
+    if ifStmt.finished:
+        return ifStmt
+
+    #check while statement
+    whileStmt = checkWhileStmt()
+    if whileStmt.finished:
+        return whileStmt
+
+    #check for statement
+    forStmt = checkForStmt()
+    if forStmt.finished:
+        return forStmt
+
+    #check breakstmt
+    breakStmt = checkBreakStmt()
+    if breakStmt.finished:
+        return breakStmt
+
+    #check return statement
+    returnStmt = checkReturnStmt()
+    if returnStmt.finished:
+        return returnStmt
+
+    #check print statement
+    printStmt = checkPrintStmt()
+    if printStmt.finished:
+        return printStmt
+
+    #check stmt block
+    stmtBlock = checkStmtBlock()
+    if stmtBlock.finished:
+        return stmtBlock
+
+
 
     return stmt
     
