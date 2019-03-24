@@ -495,6 +495,7 @@ def exprBuilder(exprTree):
             exprTree.root = ExprClass()
             exprTree.nicoRobin = exprTree.root
         #now let's start
+
         hardValue = checkCall()
 
         if not hardValue.finished:
@@ -505,8 +506,41 @@ def exprBuilder(exprTree):
             hardValue = checkConstant()
 
 
+        #this is all unary op stuff
+        if hardValue.finished == False and checkUnaryOp():
+            #maybe we have a unary operator
+            unaryOp = tokenList[index].text
+            if exprTree.nicoRobin.parent == None or 7 > opLevel(exprTree.nicoRobin.parent.operator): #add parenthesis to value here
+                exprTree.nicoRobin.operator = tokenList[index].text
+                #no left value
+                exprTree.nicoRobin.rightChild = ExprClass()
+                exprTree.nicoRobin.rightChild.parent = exprTree.nicoRobin
+                exprTree.nicoRobin = exprTree.nicoRobin.rightChild
+                index+=1
+            else: #we need to move this unary up past other unaries
+                newNicoRobinParent = exprTree.nicoRobin.parent
 
-        if hardValue.finished == True:
+                interestExpr = exprTree.nicoRobin.parent
+                while(interestExpr.parent != None and 7 <= opLevel(interestExpr.parent.operator)):
+                    interestExpr = interestExpr.parent
+
+                #slot nico robin in
+                exprTree.nicoRobin.parent = interestExpr.parent
+                interestExpr.parent.right = exprTree.nicoRobin
+
+                #put the one nico robin replaced under nicorobin
+
+                exprTree.nicoRobin.rightChild = interestExpr
+                interestExpr.parent = exprTree.nicoRobin
+
+                #dig to the bottom of the tree and add a new nico robin
+
+
+                newNicoRobinParent.rightChild = ExprClass()
+                exprTree.nicoRobin = newNicoRobinParent.rightChild
+
+
+        elif hardValue.finished == True:
             if not checkOp(): #we don't find another operator
                 #if we have a parent, set their right child to the ident
                 if exprTree.nicoRobin.parent != None:
@@ -516,7 +550,6 @@ def exprBuilder(exprTree):
 
                 exprTree.root.finished = True
                 buildingTree = False #we done
-                print("HEE HAW")
                 return exprTree.root
             else: #we found another operator
                 if exprTree.nicoRobin.parent == None or opLevel(tokenList[index].text) > opLevel(exprTree.nicoRobin.parent.operator): #we're higher priority already, or no parent
@@ -753,6 +786,12 @@ def checkOp():
     else:
         return False
 
+def checkUnaryOp():
+    global tokenList
+    global index
+    if tokenList[index].text in ["!","-"]:
+        return True
+    return False
 
 def opLevel(op):
     level0 = ["="]

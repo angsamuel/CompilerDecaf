@@ -96,7 +96,7 @@ class ExprClass(IRObject):
             exprTypeString = "EqualityExpr:"
         elif self.operator in [">","<",">=","<="]:
             exprTypeString = "RelationalExpr:"
-        elif self.operator in ["&&" or "||"]:
+        elif self.operator in ["&&", "||", "!"]:
             exprTypeString = "LogicalExpr:"
 
         
