@@ -11,10 +11,11 @@ parenBonus = 0
 
 def printAST():
     global tabCount
+    print ""
     print("Program:")
     tabCount = 1
     for thing in ir:
-        thing.printMyStuff(tabCount)
+        thing.printMyStuff("",tabCount)
 
 def parseTokenList(_tokenList):
     global tokenList
@@ -526,6 +527,9 @@ def exprBuilder(exprTree):
             hardValue = checkConstant()
 
         if hardValue.finished == False:
+            hardValue = checkReadThing()
+
+        if hardValue.finished == False:
             parenBonusCheck()
         #this is all unary op stuff
         if hardValue.finished == False and checkUnaryOp():
@@ -583,9 +587,9 @@ def exprBuilder(exprTree):
                     exprTree.nicoRobin.operator = tokenList[index].text
                     
                     exprTree.nicoRobin.score = opLevel(tokenList[index].text) + parenBonus
-                    print("HEE HAW")
-                    print exprTree.nicoRobin.operator
-                    print parenBonus + opLevel(tokenList[index].text)
+                    # print("HEE HAW")
+                    # print exprTree.nicoRobin.operator
+                    # print parenBonus + opLevel(tokenList[index].text)
                     # print("must have been greater than")
                     # print 
 
@@ -864,4 +868,24 @@ def opLevel(op):
         return 7 + parenBonus
     else:
         return -1
+
+def checkReadThing():
+    global tokenList
+    global index
+    originalIndex = index
+    if tokenList[index].text == "ReadInteger":
+        index+=1
+        if checkLParen() and checkRParen():
+            checkReadClass = ReadIntegerClass()
+            checkReadClass.finished = True
+            return checkReadClass
+    elif tokenList[index].text == "ReadLine":
+        index+=1
+        if checkLParen() and checkRParen():
+            checkLineClass = ReadLineClass()
+            checkLineClass.finished = True
+            return checkLineClass
+
+    index = originalIndex
+    return ReadLineClass()
 

@@ -7,26 +7,26 @@ class IRObject:
     isIdent = False
     def mtabs(self, tabs):
         return ("    "*tabs)
-    def printMyStuff(self, tabs):
+    def printMyStuff(self,prefix, tabs):
     	print("PRINTING FROM IR OBJECT")
 
 class IdentClass(IRObject):
     name = ""
     isIdent = True
-    def printMyStuff(self,tabs):
-        print(self.mtabs(tabs) + "Identifier: " + self.name)
+    def printMyStuff(self,prefix,tabs):
+        print(self.mtabs(tabs) + prefix + "Identifier: " + self.name)
 
 class TypeClass(IRObject):
     name = ""
-    def printMyStuff(self,tabs):
-        print(self.mtabs(tabs) + "Type: " + self.name)
+    def printMyStuff(self,prefix, tabs):
+        print(self.mtabs(tabs) + prefix + "Type: " + self.name)
 
 class VariableClass(IRObject):
     typeClass = TypeClass()
     identClass = IdentClass()
-    def printMyStuff(self,tabs):
-    	self.typeClass.printMyStuff(tabs)
-    	self.identClass.printMyStuff(tabs)
+    def printMyStuff(self,prefix,tabs):
+    	self.typeClass.printMyStuff(prefix, tabs)
+    	self.identClass.printMyStuff("", tabs)
 
  
 
@@ -38,20 +38,20 @@ class StmtBlockClass(IRObject):
         self.variableDecls = []
         self.stmts = []
 
-    def printMyStuff(self,tabs):
-        print(self.mtabs(tabs) + "StmtBlock:")
+    def printMyStuff(self,prefix, tabs):
+        print(self.mtabs(tabs) + prefix + "StmtBlock:")
         for vd in self.variableDecls:
-           vd.printMyStuff(tabs+1)
+           vd.printMyStuff("",tabs+1)
         
         for st in self.stmts:
-            st.printMyStuff(tabs+1)
+            st.printMyStuff("",tabs+1)
 
 
 class VariableDeclClass(IRObject):
     variableClass = VariableClass()
-    def printMyStuff(self,tabs):
-        print(self.mtabs(tabs) + "VarDecl:")
-    	self.variableClass.printMyStuff(tabs+1)
+    def printMyStuff(self,prefix, tabs):
+        print(self.mtabs(tabs) + prefix + "VarDecl:")
+    	self.variableClass.printMyStuff("",tabs+1)
 
 class FunctionDeclClass(IRObject):
     name = ""
@@ -63,22 +63,22 @@ class FunctionDeclClass(IRObject):
     def __init__(self):
         self.formalsList = [] #list of variables
 
-    def printMyStuff(self,tabs):
+    def printMyStuff(self,prefix, tabs):
         
-        print(self.mtabs(tabs) + "FuncDecl:")
+        print(self.mtabs(tabs) + prefix + "FnDecl:")
         print(self.mtabs(tabs+1) + "(return type)" + " Type: " + self.typeClass.name)
-        self.ident.printMyStuff(tabs+1)
+        self.ident.printMyStuff("",tabs+1)
 
         for parameter in self.formalsList:
             print(self.mtabs(tabs+1) + "(formals)" + " VarDecl:")
-            parameter.printMyStuff(tabs+2)
+            parameter.printMyStuff("",tabs+2)
         
         print(self.mtabs(tabs+1) + "(body)" + " StmtBlock:")
 
         for varDecl in self.stmtBlock.variableDecls:
-            varDecl.printMyStuff(tabs+2)
+            varDecl.printMyStuff("",tabs+2)
         for stmt in self.stmtBlock.stmts:
-            stmt.printMyStuff(tabs+2)
+            stmt.printMyStuff("", tabs+2)
 
 class ExprClass(IRObject):
     name = ""
@@ -87,18 +87,18 @@ class ExprClass(IRObject):
     leftChild = None
     rightChild = None
     score = 0
-    def printMyStuff(self, tabs):
-        exprTypeString = ""
+    def printMyStuff(self, prefix, tabs):
+        exprTypeString = prefix
         if self.operator in ["="]:
-            exprTypeString = "AssignExpr:"
+            exprTypeString += "AssignExpr:"
         elif self.operator in ["+","-","*","/", "%"]:
-            exprTypeString = "ArithmeticExpr:"
+            exprTypeString += "ArithmeticExpr:"
         elif self.operator in ["==", "!="]:
-            exprTypeString = "EqualityExpr:"
+            exprTypeString += "EqualityExpr:"
         elif self.operator in [">","<",">=","<="]:
-            exprTypeString = "RelationalExpr:"
+            exprTypeString += "RelationalExpr:"
         elif self.operator in ["&&", "||", "!"]:
-            exprTypeString = "LogicalExpr:"
+            exprTypeString += "LogicalExpr:"
 
         
         print(self.mtabs(tabs) + exprTypeString)
@@ -106,9 +106,9 @@ class ExprClass(IRObject):
         if self.leftChild != None:
             if self.leftChild.isIdent:
                 print(self.mtabs(tabs+1) + "FieldAccess:")
-                self.leftChild.printMyStuff(tabs+2)
+                self.leftChild.printMyStuff("",tabs+2)
             else:
-                self.leftChild.printMyStuff(tabs+1)
+                self.leftChild.printMyStuff("",tabs+1)
         
         if self.operator != "":
             print(self.mtabs(tabs+1) + "Operator: " + self.operator) 
@@ -116,88 +116,78 @@ class ExprClass(IRObject):
         if self.rightChild != None:
             if self.rightChild.isIdent:
                 print(self.mtabs(tabs+1) + "FieldAccess:")
-                self.rightChild.printMyStuff(tabs+2)
+                self.rightChild.printMyStuff("",tabs+2)
             else:
-                self.rightChild.printMyStuff(tabs+1)
+                self.rightChild.printMyStuff("",tabs+1)
 
 
 
 class StmtClass(IRObject):
     name = ""
     expr = ExprClass()
-    def printMyStuff(self,tabs):
-        self.expr.printMyStuff(tabs)
+    def printMyStuff(self,prefix, tabs):
+        self.expr.printMyStuff(prefix, tabs)
 
 class IfStmtClass(StmtClass):
     thenStmt = StmtClass()
     elseStmt = StmtClass()
-    def printMyStuff(self,tabs):
-        print(self.mtabs(tabs) + "IfStmt:")
-        print(self.mtabs(tabs+1) + "(test)")
-        self.expr.printMyStuff(tabs+1)
+    def printMyStuff(self,prefix, tabs):
+        print(self.mtabs(tabs) + prefix + "IfStmt:")
+        self.expr.printMyStuff("(test)", tabs+1)
         if self.thenStmt.finished:
-            print(self.mtabs(tabs+1) + "(then)")
-            self.thenStmt.printMyStuff(tabs+1)
+            self.thenStmt.printMyStuff("(then)" + tabs+1)
         if self.elseStmt.finished:
-            print(self.mtabs(tabs+1) + "(else)")
-            self.elseStmt.printMyStuff(tabs+1)
+            self.elseStmt.printMyStuff("(else)" + tabs+1)
 
 class WhileStmtClass(StmtClass):
     bodyStmt = StmtClass()
-    def printMyStuff(self, tabs):
-        print(self.mtabs(tabs)+"WhileStmt:")
-        print(self.mtabs(tabs+1) + "(test)")
-        self.expr.printMyStuff(tabs+1)
-        print(self.mtabs(tabs+1)+"(body)")
-        self.bodyStmt.printMyStuff(tabs+1)
+    def printMyStuff(self,prefix, tabs):
+        print(self.mtabs(tabs)+prefix + "WhileStmt:")
+        self.expr.printMyStuff("(test)" + tabs+1)
+        self.bodyStmt.printMyStuff("(body)" + tabs+1)
 
 
 class BreakStmtClass(StmtClass):
-    def printMyStuff(self,tabs):
-        print self.mtabs(tabs) + "BreakStmt:"
+    def printMyStuff(self,prefix,tabs):
+        print self.mtabs(tabs) + prefix +  "BreakStmt:"
 
 class ReturnStmtClass(StmtClass):
-    def printMyStuff(self,tabs):
-        print self.mtabs(tabs) + "ReturnStmt:"
+    def printMyStuff(self,prefix, tabs):
+        print self.mtabs(tabs) + prefix + "ReturnStmt:"
         if self.expr.finished:
-            self.expr.printMyStuff(tabs+1)
+            self.expr.printMyStuff("",tabs+1)
         else:
             print self.mtabs(tabs+1) + "Empty:"
 
 class PrintStmtClass(StmtClass):
     def __init__(self):
         self.exprs = []
-    def printMyStuff(self,tabs):
-        print(self.mtabs(tabs)+"PrintStmt:")
+    def printMyStuff(self,prefix, tabs):
+        print(self.mtabs(tabs)+prefix+"PrintStmt:")
         for expr in self.exprs:
-            print(self.mtabs(tabs+1) + "(args)")
-            expr.printMyStuff(tabs+1)
+            expr.printMyStuff("(args)",tabs+1)
 
 class ForStmtClass(StmtClass):
     leftExpr = ExprClass()
     midExpr = ExprClass()
     rightExpr = ExprClass()
     stmt = StmtClass()
-    def printMyStuff(self,tabs):
-        print(self.mtabs(tabs) + "ForStmt:")
+    def printMyStuff(self,prefix, tabs):
+        print(self.mtabs(tabs) + prefix +  "ForStmt:")
         
-        print(self.mtabs(tabs+1) + "(init)")
         if self.leftExpr.finished:
-            self.leftExpr.printMyStuff(tabs+1)
+            self.leftExpr.printMyStuff("(init)", tabs+1)
         else:
-            print(self.mtabs(tabs+1) + "Empty:")
+            print(self.mtabs(tabs+1) + prefix +  "Empty:")
 
-        print(self.mtabs(tabs+1) + "(test)")
-        self.midExpr.printMyStuff(tabs+1)
+        self.midExpr.printMyStuff("(test)", tabs+1)
 
-        print(self.mtabs(tabs+1) + "(step)")
         if self.rightExpr.finished:
-            self.rightExpr.printMyStuff(tabs+1)
+            self.rightExpr.printMyStuff("(step)",tabs+1)
         else:
-            print(self.mtabs(tabs+1) + "Empty:")
+            print(self.mtabs(tabs+1) + prefix +  "Empty:")
 
-        print(self.mtabs(tabs+1) + "(body)")
-        self.stmt.printMyStuff(tabs+1)
+        self.stmt.printMyStuff("(body)",tabs+1)
 
 
 
@@ -214,8 +204,8 @@ class ExprTree():
 class ConstantClass(IRObject):
     name = ""
     constantType = ""
-    def printMyStuff(self,tabs):
-        print(self.mtabs(tabs) + self.constantType + ": " + self.name)
+    def printMyStuff(self,prefix, tabs):
+        print(self.mtabs(tabs) + prefix+ self.constantType + ": " + self.name)
 
 
 
@@ -224,12 +214,25 @@ class CallClass(IRObject):
     ident = IdentClass()
     def __init__(self):
         self.actuals = []
-    def printMyStuff(self,tabs):
-        print(self.mtabs(tabs) + "Call:")
+    def printMyStuff(self,prefix,tabs):
+        print(self.mtabs(tabs) + prefix + "Call:")
+        self.ident.printMyStuff("",tabs+1)
         for actual in self.actuals:
-            print(self.mtabs(tabs+1) + "(actuals)")
-            actual.printMyStuff(tabs+1)
+            if actual.isIdent:
+                print(self.mtabs(tabs+1) + "(actuals) FieldAccess:")
+                actual.printMyStuff("", tabs+2)
+            else:
+                actual.printMyStuff("(actuals) ", tabs+1)
 
+class ReadIntegerClass(IRObject):
+    name = ""
+    def printMyStuff(self,prefix, tabs):
+        print(self.mtabs(tabs) + prefix + "ReadIntegerClass:")
+
+class ReadLineClass(IRObject):
+    name = ""
+    def printMyStuff(self,prefix, tabs):
+        print(self.mtabs(tabs) + prefix +"ReadLineClass:")
 
 
 
