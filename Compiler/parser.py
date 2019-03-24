@@ -1,7 +1,7 @@
 from token import Token
 import parserClasses
 from parserClasses import *
-import random
+import sys
 
 tokenList = []
 index = 0
@@ -54,12 +54,12 @@ def checkVariableDecl():
 
 
     #if we got a var, and a semicolon, add the var and finish
+    print("HEE HAW")
     if variable.finished and checkSemiColon():
         variableDecl.variableClass = variable
         variableDecl.finished = True
     else: #else we gotta backtrack
         index = originalIndex
-    
     return variableDecl
 
 
@@ -77,6 +77,9 @@ def checkVariable():
             variable.typeClass = typeClass
             variable.identClass = ident
             variable.finished = True
+        else:
+            #print error here
+            printError(index)
     else:
         index = originalIndex   
 
@@ -161,7 +164,6 @@ def checkFormals(): #returns a variabls list
     return variablesList
 
 def checkStmtBlock():
-    randNum = random.randint(1,1000)
     global tokenList
     global index
     #print tokenList[index].text
@@ -187,17 +189,14 @@ def checkStmtBlock():
     while not doneWithStmts:
         stmt = checkStmt()
         if stmt.finished:
-            #print("HEYA")
             stmtBlockClass.stmts.append(stmt)
-            #print(len(stmtBlockClass.stmts))
-            #print(len(stmtBlockClass.stmts))
-            #print("-----")
         else:
             doneWithStmts = True
 
     #get any number of statements
 
     if not checkRCurly():
+        printError(index)
         index = originalIndex
         return stmtBlockClass
 
@@ -287,20 +286,6 @@ def checkStmt():
     else:
         index = originalIndex
 
-    #check while statement
-
-    # else:
-    #     index = originalIndex
-
-
-    
-
-
-
-    # #check stmt block
-    # stmtBlock = checkStmtBlock()
-    # if stmtBlock.finished:
-    #     return stmtBlock
 
 
     return stmt
@@ -326,7 +311,7 @@ def checkPrintStmt():
                 
                 if not checkComma():
                     doneWithExprs = True
-            
+            print("YIKES")
             if checkRParen() and checkSemiColon() and len(printStmt.exprs) > 0:
                 printStmt.finished = True
 
@@ -346,7 +331,7 @@ def checkWhileStmt():
     global index
     originalIndex = index
     whileStmt = WhileStmtClass()
-    if tokenList[index].text == "while":
+    if tokenList[index].text == "while": #point of no return
         index += 1
         if checkLParen():
             expr = checkExpr()
@@ -357,6 +342,11 @@ def checkWhileStmt():
                     if bodyStmt.finished:
                         whileStmt.bodyStmt = bodyStmt
                         whileStmt.finished = True
+                else:
+                    printError(index)
+        else:
+            printError(index)
+
 
     return whileStmt
 
@@ -405,11 +395,11 @@ def checkReturnStmt():
         expr = checkExpr()
         if expr.finished:
             returnStmt.expr = expr
-
-    if checkSemiColon():
-        returnStmt.finished = True
-    else:
-        index = originalIndex
+    #print("DEAUX")
+        if checkSemiColon():
+            returnStmt.finished = True
+        else:
+            index = originalIndex
 
     return returnStmt
 
@@ -431,7 +421,7 @@ def checkForStmt():
         if leftExpr.finished:
             forStmt.leftExpr = leftExpr
 
-
+        print("NICO")
         if not checkSemiColon():
             index = originalIndex
             return forStmt
@@ -444,6 +434,7 @@ def checkForStmt():
             index = originalIndex
             return forStmt
 
+        print("PEEKO")
         if not checkSemiColon():
             index = originalIndex
             return forStmt
@@ -752,6 +743,8 @@ def checkSemiColon():
     if tokenList[index].text == ";":
         index+=1
         return True
+    else:
+        printError(index)
     return False
 
 def checkVoid():
@@ -886,4 +879,39 @@ def checkReadThing():
 
     index = originalIndex
     return ReadLineClass()
+
+
+
+def printError(i):
+    global tokenList
+    preSpaceCount = 0
+    currentTokenIndex = 0
+    countingSpaces = True
+    print ""
+    print "*** Error line " + str(tokenList[i].line) + "."
+    lineString = ""
+
+    for token in tokenList:
+        if currentTokenIndex == i:
+            countingSpaces = False
+
+        if token.line == tokenList[i].line:
+            lineString += token.text + " "
+            if countingSpaces:
+                    #print("ADDING " + str((len(tokenList[i].text) + 1)))
+                    #print str(len(tokenList[i].text))
+                preSpaceCount += (len(token.text) + 1)
+        currentTokenIndex += 1
+   
+    print(lineString)
+    #print str(preSpaceCount)
+    carrotString = (" " * preSpaceCount)
+    carrotString += ("^" * len(tokenList[i].text))
+    print(carrotString)
+    print("*** syntax error")
+    sys.exit()
+
+
+
+
 
