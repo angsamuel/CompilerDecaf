@@ -5,6 +5,7 @@ class IRObject:
     errorLine = -1
     errorTokenNum = -1
     isIdent = False
+    isConstant = False
     def mtabs(self, tabs):
         return ("    "*tabs)
     def printMyStuff(self,prefix, tabs):
@@ -214,6 +215,7 @@ class ExprTree():
 class ConstantClass(IRObject):
     name = ""
     constantType = ""
+    isConstant = True
     def printMyStuff(self,prefix, tabs):
         if "Double" in self.constantType:
             if "." in self.name and self.name.split(".")[1] == "0":

@@ -352,6 +352,8 @@ def checkWhileStmt():
                         whileScore -= 1
                 else:
                     printError(index)
+            else:
+                printError(index)
         else:
             printError(index)
 
@@ -378,6 +380,8 @@ def checkIfStmt():
                     if thenStmt.finished:
                         ifStmt.thenStmt = thenStmt
                         ifStmt.finished = True
+            else:
+                printError(index)
     if ifStmt.finished:
         originalIndex = index
     else:
@@ -440,6 +444,7 @@ def checkForStmt():
         if middleExpr.finished:
             forStmt.midExpr = middleExpr
         else:
+            printError(index)
             index = originalIndex
             return forStmt
 
@@ -453,6 +458,7 @@ def checkForStmt():
             forStmt.rightExpr = rightExpr
 
         if not checkRParen():
+            printError(index)
             index = originalIndex
             return forStmt
 
@@ -464,13 +470,6 @@ def checkForStmt():
             forStmt.finished = True
 
     return forStmt
-
-
-
-
-
-
-
 
 
 #check break value
@@ -595,6 +594,13 @@ def exprBuilder(exprTree):
                     # print 
 
                     exprTree.nicoRobin.leftChild = hardValue
+
+                    #check for constant assignment
+                    if exprTree.nicoRobin.operator == "=":
+                        if exprTree.nicoRobin.leftChild.isConstant:
+                            printError(index)
+
+
                     exprTree.nicoRobin.rightChild = ExprClass()
                     exprTree.nicoRobin.rightChild.parent = exprTree.nicoRobin
                     exprTree.nicoRobin = exprTree.nicoRobin.rightChild
@@ -602,6 +608,8 @@ def exprBuilder(exprTree):
                 else:
                     exprTree.nicoRobin.parent.rightChild = hardValue 
                     exprTree.nicoRobin.operator = tokenList[index].text
+                    if exprTree.nicoRobin.operator == "=":
+                        printError(index)
                     exprTree.nicoRobin.score = opLevel(tokenList[index].text) + parenBonus
                     #move up until we find one which is better than us
                     interestExpr = exprTree.nicoRobin.parent
