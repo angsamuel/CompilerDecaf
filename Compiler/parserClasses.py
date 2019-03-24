@@ -126,7 +126,9 @@ class StmtClass(IRObject):
     name = ""
     expr = ExprClass()
     def printMyStuff(self,prefix, tabs):
-        if self.expr.isIdent:
+        if self.expr == None:
+            print(self.mtabs(tabs) + prefix + "Empty:")
+        elif self.expr.isIdent:
             print(self.mtabs(tabs) +prefix + "FieldAccess:")
             self.expr.printMyStuff("",tabs+1)
         else:

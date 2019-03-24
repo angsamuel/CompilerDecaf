@@ -8,6 +8,8 @@ index = 0
 ir = [] #intermediate representation
 tabCount = 0
 parenBonus = 0
+whileScore = 0
+forScore = 0
 
 def printAST():
     global tabCount
@@ -222,15 +224,17 @@ def parenBonusCheck():
             #we'll handle parenthesis mismatch check elsewhere
             
 
-
-
-
 #WE STOPPPED HERE
 def checkStmt():
     global tokenList
     global index
     stmt = StmtClass()
     originalIndex = index
+
+    if checkOptionalSemiColon():
+        stmt.finished = True
+        stmt.expr = None
+        return stmt
     
     expr = checkExpr()
     if expr.finished:
@@ -288,6 +292,7 @@ def checkStmt():
 
 
 
+
     return stmt
 
 
@@ -329,10 +334,12 @@ def checkPrintStmt():
 def checkWhileStmt():
     global tokenList
     global index
+    global whileScore
     originalIndex = index
     whileStmt = WhileStmtClass()
     if tokenList[index].text == "while": #point of no return
         index += 1
+        whileScore += 1
         if checkLParen():
             expr = checkExpr()
             if expr.finished:
@@ -342,6 +349,7 @@ def checkWhileStmt():
                     if bodyStmt.finished:
                         whileStmt.bodyStmt = bodyStmt
                         whileStmt.finished = True
+                        whileScore -= 1
                 else:
                     printError(index)
         else:
@@ -408,10 +416,12 @@ def checkReturnStmt():
 def checkForStmt():
     global tokenList
     global index
+    global forScore
     originalIndex = index
     forStmt = ForStmtClass()
     if tokenList[index].text == "for":
         index += 1
+        forScore += 1
         if not checkLParen():
             index = originalIndex
             return forStmt
@@ -421,7 +431,6 @@ def checkForStmt():
         if leftExpr.finished:
             forStmt.leftExpr = leftExpr
 
-        print("NICO")
         if not checkSemiColon():
             index = originalIndex
             return forStmt
@@ -434,7 +443,6 @@ def checkForStmt():
             index = originalIndex
             return forStmt
 
-        print("PEEKO")
         if not checkSemiColon():
             index = originalIndex
             return forStmt
@@ -452,6 +460,7 @@ def checkForStmt():
 
         if stmt.finished:
             forStmt.stmt = stmt
+            forScore -= 1
             forStmt.finished = True
 
     return forStmt
@@ -469,9 +478,12 @@ def checkBreakStmt():
     global tokenList
     global index
     breakStmt = BreakStmtClass()
-    if tokenList[index].text == "break" and tokenList[index+1].text == ";":
-        index+=2
-        breakStmt.finished =  True
+    if tokenList[index].text == "break":
+        if forScore < 1 and whileScore < 1:
+            printError(index)
+        index+=1
+        if checkSemiColon():
+            breakStmt.finished = True
     return breakStmt
 
 
@@ -742,10 +754,22 @@ def checkSemiColon():
     global index
     if tokenList[index].text == ";":
         index+=1
+        if parenBonus > 0:
+            printError(index-1)
         return True
     else:
         printError(index)
     return False
+
+def checkOptionalSemiColon():
+    global tokenList
+    global index
+    if tokenList[index].text == ";":
+        index+=1
+        if parenBonus > 0:
+            printError(index-1)
+        return True
+    return False    
 
 def checkVoid():
     global tokenList

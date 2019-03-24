@@ -1,5 +1,7 @@
 int func(){
 
-	tester(c);
+	while(a < b){
+		break;
+	}
 
 }
