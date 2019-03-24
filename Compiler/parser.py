@@ -388,9 +388,7 @@ def checkIfStmt():
     if ifStmt.finished: #now we gotta check for the else
         if tokenList[index].text == "else":
             index+=1
-            print("WELL NOW")
             elseStmt = checkStmt()
-            print("WELL NOW")
             if elseStmt.finished:
                 ifStmt.elseStmt = elseStmt
             else: 
@@ -480,7 +478,7 @@ def checkBreakStmt():
     global tokenList
     global index
     breakStmt = BreakStmtClass()
-    if tokenList[index].name == "break" and tokenList[index+1] == ";":
+    if tokenList[index].text == "break" and tokenList[index+1].text == ";":
         index+=2
         breakStmt.finished =  True
     return breakStmt

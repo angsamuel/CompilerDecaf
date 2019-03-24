@@ -126,7 +126,11 @@ class StmtClass(IRObject):
     name = ""
     expr = ExprClass()
     def printMyStuff(self,prefix, tabs):
-        self.expr.printMyStuff(prefix, tabs)
+        if self.expr.isIdent:
+            print(self.mtabs(tabs) +prefix + "FieldAccess:")
+            self.expr.printMyStuff("",tabs+1)
+        else:
+            self.expr.printMyStuff(prefix, tabs)
 
 class IfStmtClass(StmtClass):
     thenStmt = StmtClass()
@@ -135,16 +139,16 @@ class IfStmtClass(StmtClass):
         print(self.mtabs(tabs) + prefix + "IfStmt:")
         self.expr.printMyStuff("(test)", tabs+1)
         if self.thenStmt.finished:
-            self.thenStmt.printMyStuff("(then)" + tabs+1)
+            self.thenStmt.printMyStuff("(then)", tabs+1)
         if self.elseStmt.finished:
-            self.elseStmt.printMyStuff("(else)" + tabs+1)
+            self.elseStmt.printMyStuff("(else)", tabs+1)
 
 class WhileStmtClass(StmtClass):
     bodyStmt = StmtClass()
     def printMyStuff(self,prefix, tabs):
         print(self.mtabs(tabs)+prefix + "WhileStmt:")
-        self.expr.printMyStuff("(test)" + tabs+1)
-        self.bodyStmt.printMyStuff("(body)" + tabs+1)
+        self.expr.printMyStuff("(test)",tabs+1)
+        self.bodyStmt.printMyStuff("(body)", tabs+1)
 
 
 class BreakStmtClass(StmtClass):
@@ -182,7 +186,7 @@ class ForStmtClass(StmtClass):
         if self.leftExpr.finished:
             self.leftExpr.printMyStuff("(init)", tabs+1)
         else:
-            print(self.mtabs(tabs+1) + prefix +  "Empty:")
+            print(self.mtabs(tabs+1) + "(init)" +  "Empty:")
 
         self.midExpr.printMyStuff("(test)", tabs+1)
 
