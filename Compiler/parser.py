@@ -7,6 +7,7 @@ tokenList = []
 index = 0
 ir = [] #intermediate representation
 tabCount = 0
+parenBonus = 0
 
 def printAST():
     global tabCount
@@ -203,6 +204,24 @@ def checkStmtBlock():
     #we closed our curly, return complete stmt block
     stmtBlockClass.finished = True
     return stmtBlockClass
+
+
+def parenBonusCheck():
+    global tokenList
+    global index
+    global parenBonus
+    #print tokenList[index].text
+    if checkLParen():
+        parenBonus += 10
+        #print tokenList[index].text
+        parenBonusCheck()
+    elif parenBonus > 0  and checkRParen():
+        parenBonus -= 10
+        parenBonusCheck()
+        #else:
+            #we'll handle parenthesis mismatch check elsewhere
+            
+
 
 
 
@@ -481,15 +500,16 @@ def checkExpr():
 def exprBuilder(exprTree):
     global tokenList
     global index
+    global parenBonus
     originalIndex = index
     expr = ExprClass()
     buildingTree = True
     firstLoop = True
     #print("START INDEX " + str(index))
 
-
     while buildingTree:
         hardValue = None
+        parenBonusCheck()
 
         if exprTree.root == None:
             exprTree.root = ExprClass()
@@ -505,13 +525,16 @@ def exprBuilder(exprTree):
         if hardValue.finished == False:
             hardValue = checkConstant()
 
-
+        if hardValue.finished == False:
+            parenBonusCheck()
         #this is all unary op stuff
         if hardValue.finished == False and checkUnaryOp():
             #maybe we have a unary operator
+
             unaryOp = tokenList[index].text
-            if exprTree.nicoRobin.parent == None or 7 > opLevel(exprTree.nicoRobin.parent.operator): #add parenthesis to value here
+            if exprTree.nicoRobin.parent == None or 7+parenBonus > exprLevel(exprTree.nicoRobin.parent): #add parenthesis to value here
                 exprTree.nicoRobin.operator = tokenList[index].text
+                exprTree.nicoRobin.score = 7 + parenBonus
                 #no left value
                 exprTree.nicoRobin.rightChild = ExprClass()
                 exprTree.nicoRobin.rightChild.parent = exprTree.nicoRobin
@@ -520,8 +543,11 @@ def exprBuilder(exprTree):
             else: #we need to move this unary up past other unaries
                 newNicoRobinParent = exprTree.nicoRobin.parent
 
+                exprTree.nicoRobin.operator = tokenList[index].text
+                exprTree.nicoRobin.score = 7 + parenBonus
+
                 interestExpr = exprTree.nicoRobin.parent
-                while(interestExpr.parent != None and 7 <= opLevel(interestExpr.parent.operator)):
+                while(interestExpr.parent != None and 7+parenBonus <= exprLevel(interestExpr.parent)):
                     interestExpr = interestExpr.parent
 
                 #slot nico robin in
@@ -541,6 +567,7 @@ def exprBuilder(exprTree):
 
 
         elif hardValue.finished == True:
+            parenBonusCheck()
             if not checkOp(): #we don't find another operator
                 #if we have a parent, set their right child to the ident
                 if exprTree.nicoRobin.parent != None:
@@ -552,8 +579,16 @@ def exprBuilder(exprTree):
                 buildingTree = False #we done
                 return exprTree.root
             else: #we found another operator
-                if exprTree.nicoRobin.parent == None or opLevel(tokenList[index].text) > opLevel(exprTree.nicoRobin.parent.operator): #we're higher priority already, or no parent
+                if exprTree.nicoRobin.parent == None or (opLevel(tokenList[index].text) + parenBonus) > exprLevel(exprTree.nicoRobin.parent): #we're higher priority already, or no parent
                     exprTree.nicoRobin.operator = tokenList[index].text
+                    
+                    exprTree.nicoRobin.score = opLevel(tokenList[index].text) + parenBonus
+                    print("HEE HAW")
+                    print exprTree.nicoRobin.operator
+                    print parenBonus + opLevel(tokenList[index].text)
+                    # print("must have been greater than")
+                    # print 
+
                     exprTree.nicoRobin.leftChild = hardValue
                     exprTree.nicoRobin.rightChild = ExprClass()
                     exprTree.nicoRobin.rightChild.parent = exprTree.nicoRobin
@@ -562,13 +597,17 @@ def exprBuilder(exprTree):
                 else:
                     exprTree.nicoRobin.parent.rightChild = hardValue 
                     exprTree.nicoRobin.operator = tokenList[index].text
+                    exprTree.nicoRobin.score = opLevel(tokenList[index].text) + parenBonus
                     #move up until we find one which is better than us
                     interestExpr = exprTree.nicoRobin.parent
-                    while(interestExpr.parent != None and opLevel(exprTree.nicoRobin.operator) <= opLevel(interestExpr.parent.operator) ):
+                    
+
+                    while(interestExpr.parent != None and exprLevel(exprTree.nicoRobin) <= exprLevel(interestExpr.parent)):
                         interestExpr = interestExpr.parent
 
                     #get new nodes parent, tell parent new child is new node
                     exprTree.nicoRobin.parent = interestExpr.parent
+
 
                     if exprTree.nicoRobin.parent != None:
                         exprTree.nicoRobin.parent.rightChild = exprTree.nicoRobin
@@ -594,6 +633,7 @@ def exprBuilder(exprTree):
         firstLoop = False
 
     #print("END INDEX " + str(index))
+
     return exprTree.root
 
 
@@ -609,7 +649,7 @@ def checkCall():
 
 
 
-    print "TOKEN " + tokenList[index].text
+    #print "TOKEN " + tokenList[index].text
 
     ident = checkIdent()
 
@@ -793,7 +833,11 @@ def checkUnaryOp():
         return True
     return False
 
+def exprLevel(expr):
+    return expr.score
+
 def opLevel(op):
+    global parenBonus
     level0 = ["="]
     level1 = ["||"]
     level2 = ["&&"]
@@ -803,21 +847,21 @@ def opLevel(op):
     level6 = ["*","/","%"]
     level7 = ["!"]
     if op in level0:
-        return 0
+        return 0 + parenBonus
     elif op in level1:
-        return 1
+        return 1 + parenBonus
     elif op in level2:
-        return 2
+        return 2 + parenBonus
     elif op in level3:
-        return 3
+        return 3 + parenBonus
     elif op in level4:
-        return 4
+        return 4 + parenBonus
     elif op in level5:
-        return 5
+        return 5 + parenBonus
     elif op in level6:
-        return 6
+        return 6 + parenBonus
     elif op in level7:
-        return 7
+        return 7 + parenBonus
     else:
         return -1
 

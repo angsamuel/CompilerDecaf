@@ -86,6 +86,7 @@ class ExprClass(IRObject):
     parent = None
     leftChild = None
     rightChild = None
+    score = 0
     def printMyStuff(self, tabs):
         exprTypeString = ""
         if self.operator in ["="]:
