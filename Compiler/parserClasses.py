@@ -165,7 +165,11 @@ class PrintStmtClass(StmtClass):
     def printMyStuff(self,prefix, tabs):
         print(self.mtabs(tabs)+prefix+"PrintStmt:")
         for expr in self.exprs:
-            expr.printMyStuff("(args)",tabs+1)
+            if expr.isIdent:
+                print(self.mtabs(tabs+1) + "(args)" + "FieldAccess:")
+                expr.printMyStuff("",tabs+2)
+            else:
+                expr.printMyStuff("(args)",tabs+1)
 
 class ForStmtClass(StmtClass):
     leftExpr = ExprClass()
@@ -205,6 +209,9 @@ class ConstantClass(IRObject):
     name = ""
     constantType = ""
     def printMyStuff(self,prefix, tabs):
+        if "Double" in self.constantType:
+            if "." in self.name and self.name.split(".")[1] == "0":
+                self.name = self.name.split(".")[0]
         print(self.mtabs(tabs) + prefix+ self.constantType + ": " + self.name)
 
 
@@ -227,12 +234,12 @@ class CallClass(IRObject):
 class ReadIntegerClass(IRObject):
     name = ""
     def printMyStuff(self,prefix, tabs):
-        print(self.mtabs(tabs) + prefix + "ReadIntegerClass:")
+        print(self.mtabs(tabs) + prefix + "ReadIntegerExpr:")
 
 class ReadLineClass(IRObject):
     name = ""
     def printMyStuff(self,prefix, tabs):
-        print(self.mtabs(tabs) + prefix +"ReadLineClass:")
+        print(self.mtabs(tabs) + prefix +"ReadLineExpr:")
 
 
 
