@@ -10,6 +10,7 @@ tabCount = 0
 parenBonus = 0
 whileScore = 0
 forScore = 0
+relationalOperators = [">","<",">=","<="]
 
 def printAST():
     global tabCount
@@ -502,6 +503,7 @@ def exprBuilder(exprTree):
     global tokenList
     global index
     global parenBonus
+    global relationalOperators
     originalIndex = index
     expr = ExprClass()
     buildingTree = True
@@ -531,6 +533,8 @@ def exprBuilder(exprTree):
 
         if hardValue.finished == False:
             parenBonusCheck()
+
+
         #this is all unary op stuff
         if hardValue.finished == False and checkUnaryOp():
             #maybe we have a unary operator
@@ -587,11 +591,7 @@ def exprBuilder(exprTree):
                     exprTree.nicoRobin.operator = tokenList[index].text
                     
                     exprTree.nicoRobin.score = opLevel(tokenList[index].text) + parenBonus
-                    # print("HEE HAW")
-                    # print exprTree.nicoRobin.operator
-                    # print parenBonus + opLevel(tokenList[index].text)
-                    # print("must have been greater than")
-                    # print 
+
 
                     exprTree.nicoRobin.leftChild = hardValue
 
@@ -599,6 +599,8 @@ def exprBuilder(exprTree):
                     if exprTree.nicoRobin.operator == "=":
                         if exprTree.nicoRobin.leftChild.isConstant:
                             printError(index)
+
+
 
 
                     exprTree.nicoRobin.rightChild = ExprClass()
@@ -633,9 +635,19 @@ def exprBuilder(exprTree):
                         #yoinks scoob, like, we're the new root
                         exprTree.root = exprTree.nicoRobin
 
+                    if exprTree.nicoRobin.leftChild != None:
+                        if exprTree.nicoRobin.operator in relationalOperators:
+                            if exprTree.nicoRobin.leftChild.operator in relationalOperators:
+                                if exprLevel(exprTree.nicoRobin) == exprLevel(exprTree.nicoRobin.leftChild):
+                                    printError(index)
+
+
                     exprTree.nicoRobin.rightChild = ExprClass()
                     exprTree.nicoRobin.rightChild.parent = exprTree.nicoRobin
                     exprTree.nicoRobin = exprTree.nicoRobin.rightChild
+
+                    #check for relational chaining
+
 
                     index += 1
         else:
