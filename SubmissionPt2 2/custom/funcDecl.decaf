@@ -1,0 +1,7 @@
+int func(){
+
+	//Print(tester(c));
+	tester(c);
+
+
+}
