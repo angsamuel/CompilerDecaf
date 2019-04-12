@@ -32,6 +32,7 @@ funcTypes = []
 funcParameters = [] #2d array of types
 funcNames = []
 funcVerified = []
+funcDeclSpottedDict = {}
 
 varNames = []
 varScopes = []
@@ -41,6 +42,8 @@ varVerified = []
 currentScope = ["GLOBAL"]
 
 fileContents = ""
+
+
 
 
 def appendVarScope():
@@ -58,7 +61,7 @@ def check(ir, fc):
 
 	#first grab all the declarations
 	grabAllDecls(ir)
-
+	funcDeclSpottedDict.clear()
 	#we don't need to check for duplicates
 	verifyAST(ir)
 
@@ -73,6 +76,8 @@ def grabAllDecls(ir):
 	global funcNames
 	global funcTypes
 	global funcVerified
+	global funcDeclSpottedDict
+
 	for irOb in ir:
 		if irOb.isFuncDecl:
 			#add the name
@@ -85,8 +90,14 @@ def grabAllDecls(ir):
 
 			tempFuncParameters = []
 
+
+			if irOb.identClass.name in funcDeclSpottedDict:
+				funcDeclSpottedDict[irOb.identClass.name] = funcDeclSpottedDict[irOb.identClass.name] + 1
+			else:
+				funcDeclSpottedDict[irOb.identClass.name] = 1
+
 			#we're now inside the scope of this function
-			currentScope.append(irOb.identClass.name + "PARAMETERS")
+			currentScope.append(irOb.identClass.name + "PARAMETERS" + str(funcDeclSpottedDict[irOb.identClass.name]))
 			
 
 			for f in irOb.formalsList:
@@ -96,7 +107,7 @@ def grabAllDecls(ir):
 
 			funcParameters.append(tempFuncParameters)
 
-			currentScope.append(irOb.identClass.name + "BODY")
+			currentScope.append(irOb.identClass.name + "BODY" + str(funcDeclSpottedDict[irOb.identClass.name]))
 
 			#once we have the function itself, we will later need to 
 			#dig through and grab all the vardeclstoo
@@ -239,18 +250,25 @@ def verifyVarDecl(varDeclOb):
 	global funcVerified
 	global varVerified
 
+
 	dupeFound = False
 	#check through func names, if we got the same scope, 
+
+	print varDeclOb.variableClass.identClass.name
+
+
 	for i in range(0,len(varNames)):
+		# print("COMPARE")
+		# print(varScopes[i])
+		# print(currentScope)
+		# print("END")
 		if varNames[i] == varDeclOb.variableClass.identClass.name:
 			#we might have found our match
 			if varVerified[i]:
-				if varScopes[i] == currentScope:
+				if varScopes[i] == currentScope and not dupeFound:
 					printDupeIdentError(varDeclOb.variableClass)
 					dupeFound = True
-					break
 			else:
-
 				varVerified[i] = True
 				break
 
@@ -266,18 +284,29 @@ def verifyVarDecl(varDeclOb):
 def verifyAny(irOb):
 	global currentScope
 	global returnTypeNeeded
+	global funcDeclSpottedDict
 
 	if irOb.isFuncDecl:
 		returnTypeNeeded = irOb.typeClass.name
 		verifyFuncDecl(irOb)
-		currentScope.append(irOb.identClass.name + "PARAMETERS")
-		currentScope.append(irOb.identClass.name + "BODY")
+		
+
+		if irOb.identClass.name in funcDeclSpottedDict:
+			funcDeclSpottedDict[irOb.identClass.name] = funcDeclSpottedDict[irOb.identClass.name] + 1
+		else:
+			funcDeclSpottedDict[irOb.identClass.name] = 1
+
+		currentScope.append(irOb.identClass.name + "PARAMETERS" + str(funcDeclSpottedDict[irOb.identClass.name]))
+		currentScope.append(irOb.identClass.name + "BODY" + str(funcDeclSpottedDict[irOb.identClass.name]))
 		verifyAny(irOb.stmtBlock)
 		currentScope.pop()
 		currentScope.pop()
 	elif irOb.isVarDecl:
-
 		verifyVarDecl(irOb)
+	elif irOb.isStmtBlock:
+		for varDecl in irOb.variableDecls:
+
+			verifyVarDecl(varDecl)
 
 	#evaluate expression
 
@@ -291,9 +320,13 @@ def verifyAny(irOb):
 
 def verifyAST(ir):
 	global currentScope
+	global varScopes
+	global varNames
 	currentScope = ["GLOBAL"]
 	for irOb in ir:
 		verifyAny(irOb)
+	#print varScopes
+	#print varNames
 
 
 
