@@ -11,6 +11,8 @@ class IRObject:
     isConstant = False
     isBreak = False
     isFuncDecl = False
+    isVarDecl = False
+    isStmtBlock = False
     def mtabs(self, tabs):
         return ("    "*tabs)
     def printMyStuff(self,prefix, tabs):
@@ -36,11 +38,9 @@ class VariableClass(IRObject):
     	self.identClass.printMyStuff("", tabs)
 
  
-
-
 class StmtBlockClass(IRObject):
     name = ""
-    
+    isStmtBlock = True
     def __init__(self):
         self.variableDecls = []
         self.stmts = []
@@ -56,6 +56,7 @@ class StmtBlockClass(IRObject):
 
 class VariableDeclClass(IRObject):
     variableClass = VariableClass()
+    isVarDecl = True
     def printMyStuff(self,prefix, tabs):
         print(self.mtabs(tabs) + prefix + "VarDecl:")
     	self.variableClass.printMyStuff("",tabs+1)
@@ -133,6 +134,7 @@ class ExprClass(IRObject):
 class StmtClass(IRObject):
     name = ""
     expr = ExprClass()
+    stmtType = ""
     def printMyStuff(self,prefix, tabs):
         if self.expr == None:
             print(self.mtabs(tabs) + prefix + "Empty:")
@@ -145,6 +147,7 @@ class StmtClass(IRObject):
 class IfStmtClass(StmtClass):
     thenStmt = StmtClass()
     elseStmt = StmtClass()
+    stmtType = "if"
     def printMyStuff(self,prefix, tabs):
         print(self.mtabs(tabs) + prefix + "IfStmt:")
         self.expr.printMyStuff("(test)", tabs+1)
@@ -155,6 +158,7 @@ class IfStmtClass(StmtClass):
 
 class WhileStmtClass(StmtClass):
     bodyStmt = StmtClass()
+    stmtType = "while"
     def printMyStuff(self,prefix, tabs):
         print(self.mtabs(tabs)+prefix + "WhileStmt:")
         self.expr.printMyStuff("(test)",tabs+1)
@@ -191,6 +195,7 @@ class ForStmtClass(StmtClass):
     midExpr = ExprClass()
     rightExpr = ExprClass()
     stmt = StmtClass()
+    stmtType = "for"
     def printMyStuff(self,prefix, tabs):
         print(self.mtabs(tabs) + prefix +  "ForStmt:")
         
