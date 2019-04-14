@@ -1,4 +1,4 @@
 void main() {
-  bool a;
-  a = !5;
+int a;
+a = "hello";
 }

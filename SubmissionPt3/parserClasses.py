@@ -6,7 +6,7 @@ class IRObject:
     line = -1
     errorTokenNum = -1
 
-    #type stuff
+    #type stuff cut my life into pieces this is my last resort
     isIdent = False
     isConstant = False
     isBreak = False
@@ -15,6 +15,7 @@ class IRObject:
     isStmtBlock = False
     isExpr = False
     isStmt = False
+    isCall = False
     def mtabs(self, tabs):
         return ("    "*tabs)
     def printMyStuff(self,prefix, tabs):
@@ -78,7 +79,7 @@ class FunctionDeclClass(IRObject):
         
         print(self.mtabs(tabs) + prefix + "FnDecl:")
         print(self.mtabs(tabs+1) + "(return type)" + " Type: " + self.typeClass.name)
-        self.ident.printMyStuff("",tabs+1)
+        self.identClass.printMyStuff("",tabs+1)
 
         for parameter in self.formalsList:
             print(self.mtabs(tabs+1) + "(formals)" + " VarDecl:")
@@ -175,6 +176,7 @@ class BreakStmtClass(StmtClass):
         print self.mtabs(tabs) + prefix +  "BreakStmt:"
 
 class ReturnStmtClass(StmtClass):
+    stmtType = "return"
     def printMyStuff(self,prefix, tabs):
         print self.mtabs(tabs) + prefix + "ReturnStmt:"
         if self.expr.finished:
@@ -243,12 +245,13 @@ class ConstantClass(IRObject):
 
 
 class CallClass(IRObject):
+    isCall = True
     identClass = IdentClass()
     def __init__(self):
         self.actuals = []
     def printMyStuff(self,prefix,tabs):
         print(self.mtabs(tabs) + prefix + "Call:")
-        self.ident.printMyStuff("",tabs+1)
+        self.identClass.printMyStuff("",tabs+1)
         for actual in self.actuals:
             if actual.isIdent:
                 print(self.mtabs(tabs+1) + "(actuals) FieldAccess:")

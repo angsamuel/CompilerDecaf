@@ -16,6 +16,12 @@ from parserClasses import *
 #-operators use correct types
 #-functions take correct type of arguments
 
+#WHAT IS LEFT TO DO
+#Prints -E
+#ReadLines -E
+#error carrot matching -H
+#edge case stuff that I probably don't need to do -kms
+#final testing
 
 
 #questions
@@ -166,6 +172,27 @@ def printBadBreakError(breakOb):
 	print("*** break is only allowed inside a loop")
 	print("")
 
+def printBadReturn(returnOb, retType):
+	global fileContents
+	global returnTypeNeeded
+	print("*** Error line " + str(returnOb.line) + ".")
+	print(fileContents.split("\n")[returnOb.line-1])
+	print("*** Incompatible return: " + retType + " given, " + returnTypeNeeded + " expected")
+	print""
+
+def printFuncParametersMismatchError(callOb, got, needed):
+	print("*** Error line " + str(callOb.line) + ".")
+	print(fileContents.split("\n")[callOb.line-1])
+	print("*** Function \'" + callOb.identClass.name + "\' expects " + str(needed) + " arguments but " + str(got) + " given")
+	print""
+
+def printWrongFuncParameterType(callOb, index, got, needed):
+	print("*** Error line " + str(callOb.line) + ".")
+	print(fileContents.split("\n")[callOb.line-1])
+	print("*** Incompatible argument " + str(index+1) + ": " +  got + " given, " + needed + " expected")
+	print""
+
+	
 
 def packageVarDecl(v):
 	global funcNames
@@ -209,10 +236,10 @@ def checkStmtForVarDecls(stmt):
 			currentScope.pop()
 
 	if stmt.stmtType == "for" or stmt.stmtType == "while":
-		if stmt.bodyStmt.isStmtBlock:
+		if stmt.stmt.isStmtBlock:
 			loopCount += 1
 			currentScope.append("LOOP" + str(loopCount))
-			checkStmtForVarDecls(stmt)
+			checkStmtBlockForVarDecls(stmt.stmt)
 			currentScope.pop()
 
 
@@ -342,15 +369,27 @@ def verifyExpr(expr):
 	global compOps
 	returnValue = "error"
 
+	if expr.isCall: 
+		return verifyCall(expr)
+
 	clearSuperLineAfter = False
 	if exprSuperLine == -1:
 		clearSuperLineAfter = True
 		exprSuperLine = expr.line
 
+
+
 	if expr.isIdent:
 		returnValue = identTypeInScope(expr)
 	elif expr.isConstant:
 		returnValue = expr.constantType
+	elif expr.operator == "-" and expr.leftChild == None:
+		rightType = convertConstType(verifyExpr(expr.rightChild))
+		if rightType != "error" and (rightType == "bool" or rightType == "assignment" or rightType == "string"):
+			printExprOperandError(expr, exprSuperLine, "", rightType, expr.operator)
+			returnValue = "error"
+		else:
+			returnValue = rightType
 	elif expr.operator in arithOps or expr.operator in compOps:
 		rightType = convertConstType(verifyExpr(expr.rightChild))
 		leftType = convertConstType(verifyExpr(expr.leftChild))
@@ -361,7 +400,7 @@ def verifyExpr(expr):
 		else:
 			if rightType == "error":
 				returnValue = "error"
-			elif rightType == "bool" or rightType == "assignment":
+			elif rightType == "bool" or rightType == "assignment" or rightType == "string":
 				printExprOperandError(expr, exprSuperLine, leftType, rightType, expr.operator)
 				returnValue = "error"
 			else:
@@ -397,8 +436,12 @@ def verifyExpr(expr):
 		rightType = convertConstType(verifyExpr(expr.rightChild))
 		if rightType != "bool" and rightType != "error":
 			printExprOperandError(expr, exprSuperLine, "", rightType, expr.operator)
+			returnValue = "error"
 		else:
-			return rightType
+			returnValue = rightType
+	
+
+
 	if clearSuperLineAfter:
 		exprSuperLine = -1
 	return returnValue
@@ -435,14 +478,72 @@ def verifyBreakStmt(breakOb):
 		printBadBreakError(breakOb);
 
 
+def verifyForStmt(forStmt):
+	global loopLevel
+	global loopCount
+	global currentScope
+
+	loopCount += 1
+
+	currentScope.append("LOOP" + str(loopCount))
+
+	verifyExpr(forStmt.leftExpr)
+	middleType = verifyExpr(forStmt.midExpr)
+	if middleType != "bool":
+		printBadTestExpr(forStmt.midExpr)
+
+
+	verifyExpr(forStmt.rightExpr)
+
+	loopLevel += 1
+	#here we check the statement block
+	verifyStmt(forStmt.stmt)
+
+	loopLevel -= 1
+
+def verifyReturnStmt(retStmt):
+	global returnTypeNeeded
+	returnType = verifyExpr(retStmt.expr)
+	if returnType != returnTypeNeeded:
+		printBadReturn(retStmt, returnType)
+
+def verifyCall(callStmt):
+	global funcNames
+	global funcTypes
+	global funcParameters
+	callName = callStmt.identClass.name
+	returnType = "error"
+
+	for i in range(0,len(funcNames)):
+		if funcNames[i] == callName:
+			returnType = funcTypes[i]
+			#first compare the number
+			if len(funcParameters[i]) != len(callStmt.actuals):
+				printFuncParametersMismatchError(callStmt, len(callStmt.actuals), len(funcParameters[i]))
+			else:
+				#we need to make sure the types all match
+				for j in range(0, len(funcParameters[i])):
+					exprType = convertConstType(verifyExpr(callStmt.actuals[j]))
+					if exprType != funcParameters[i][j]:
+						printWrongFuncParameterType(callStmt, j, exprType, funcParameters[i][j])
+
+
+	return returnType
+
+
 
 def verifyStmt(stmt):
+
 	if stmt.isStmtBlock:
 		verifyAny(stmt)
 	elif stmt.stmtType == "if":
 		verifyIfStmt(stmt)
+	elif stmt.stmtType == "for":
+		verifyForStmt(stmt)
+	elif stmt.stmtType == "return":
+		verifyReturnStmt(stmt)
 	elif stmt.isBreak:
-		verifyBreakStmt(stmt)
+		verifyBreakStmt(stmt)	
 	else:
 		verifyExpr(stmt.expr)
 
@@ -466,6 +567,7 @@ def verifyAny(irOb):
 		verifyAny(irOb.stmtBlock)
 		currentScope.pop()
 		currentScope.pop()
+		returnTypeNeeded = ""
 	elif irOb.isVarDecl:
 		verifyVarDecl(irOb)
 	elif irOb.isStmtBlock:
