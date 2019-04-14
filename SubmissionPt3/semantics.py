@@ -137,11 +137,60 @@ def grabAllDecls(ir):
 			packageVarDecl(irOb)
 
 
+def getParameterString(lineString, paramIndex):
+	subStart = 0
+	subEnd = 0
+
+	currentParam = -1
+	rightsNeeded = 0
+
+	foundGuts = False
+	foundRightParam = False
+	index = 0
+
+	for c in lineString:
+		if c == '(':
+			if not foundGuts:
+				foundGuts = True
+				currentParam += 1
+			else:
+				rightsNeeded += 1
+		elif c == ')':
+			if rightsNeeded < 1:
+				subEnd = index
+				break #we're done 
+			else:
+				rightsNeeded -= 1			
+		elif c == ',':
+			if rightsNeeded < 1:
+				currentParam += 1
+				if foundRightParam:
+					subEnd = index
+					break
+
+		if currentParam == paramIndex and not foundRightParam:
+			foundRightParam = True
+			subStart = index + 1
+		
+		index += 1
+
+	return lineString[subStart:subEnd].strip()
+
+def getTestString(lineString):
+
+	if "for" in lineString:
+		return lineString.split(";")[1].strip()
+	else:
+		return getParameterString(lineString,0)
+
+
+
 def printExprOperandError(irOb, line, leftType, rightType, operator):
 	global fileContents
+	print""
 	print("*** Error line " + str(line) + ".")
 	print(fileContents.split("\n")[line-1])
-	print("^")
+	print("^" * len(irOb.operator))
 	if leftType == "":
 		print("*** Incompatible operand: " + leftType + " " + operator + " " + rightType)
 	else:
@@ -150,6 +199,7 @@ def printExprOperandError(irOb, line, leftType, rightType, operator):
 
 def printDupeIdentError(irOb):
 	global fileContents
+	print""
 	print("*** Error line " + str(irOb.line) + ".")
 	print(fileContents.split("\n")[irOb.line-1])
 	print("^" * len(irOb.identClass.name))
@@ -158,49 +208,74 @@ def printDupeIdentError(irOb):
 
 def printBadTestExpr(exprOb):
 	global fileContents
+	print""
 	print("*** Error line " + str(exprOb.line) + ".")
 	print(fileContents.split("\n")[exprOb.line-1])
-	print("^")
+
+	#find the number of carrots we need
+	chunkWeWant = getTestString(fileContents.split("\n")[exprOb.line-1])
+
+
+	print("^" * len(chunkWeWant))
 	print("*** Test expression must have boolean type")
 	print("")
 
 def printBadBreakError(breakOb):
 	global fileContents
+	print""
 	print("*** Error line " + str(breakOb.line) + ".")
 	print(fileContents.split("\n")[breakOb.line-1])
 	print("^^^^^")
 	print("*** break is only allowed inside a loop")
-	print("")
+	print""
 
 def printBadReturn(returnOb, retType):
 	global fileContents
 	global returnTypeNeeded
+	print""
 	print("*** Error line " + str(returnOb.line) + ".")
 	print(fileContents.split("\n")[returnOb.line-1])
+
+	chunkWeWant = fileContents.split("\n")[returnOb.line-1].split("return")[1].split(";")[0].strip()
+	print("^" * len(chunkWeWant))
+
 	print("*** Incompatible return: " + retType + " given, " + returnTypeNeeded + " expected")
 	print""
 
 def printFuncParametersMismatchError(callOb, got, needed):
+	print""
 	print("*** Error line " + str(callOb.line) + ".")
 	print(fileContents.split("\n")[callOb.line-1])
+	print("^"*len(callOb.identClass.name))
 	print("*** Function \'" + callOb.identClass.name + "\' expects " + str(needed) + " arguments but " + str(got) + " given")
 	print""
 
 def printWrongFuncParameterType(callOb, index, got, needed):
+	print""
 	print("*** Error line " + str(callOb.line) + ".")
 	print(fileContents.split("\n")[callOb.line-1])
+
+	chunkWeWant = getParameterString(fileContents.split("\n")[callOb.line-1], index)
+	print ("^" * len(chunkWeWant))
+
 	print("*** Incompatible argument " + str(index+1) + ": " +  got + " given, " + needed + " expected")
+
 	print""
 
 def printWrongPrintParamter(printOb, index, got):
+	print""
 	print("*** Error line " + str(printOb.line) + ".")
 	print(fileContents.split("\n")[printOb.line-1])
+	chunkWeWant = getParameterString(fileContents.split("\n")[printOb.line-1],index)
+	print("^"*len(chunkWeWant))
 	print("*** Incompatible argument " + str(index+1) + ": " + got + " given, int/bool/string expected")
 	print""
 
 def printIdentNotFoundInScope(identOb):
+	print""
 	print("*** Error line " + str(identOb.line) + ".")
 	print(fileContents.split("\n")[identOb.line-1])
+	print("^"*len(identOb.name))
 	print("*** No declaration found for variable \'" + identOb.name + "\'")
 	print""
 
@@ -388,6 +463,10 @@ def verifyExpr(expr):
 
 	if expr.isCall: 
 		return verifyCall(expr)
+	elif expr.isReadInt:
+		return "int"
+	elif expr.isReadLine:
+		return "string"
 
 
 	clearSuperLineAfter = False
@@ -496,6 +575,27 @@ def verifyBreakStmt(breakOb):
 		printBadBreakError(breakOb);
 
 
+def verifyWhileStmt(whileStmt):
+	global loopLevel
+	global loopCount
+	global currentScope
+
+	loopCount += 1
+
+	currentScope.append("LOOP" + str(loopCount))
+
+	stmtType = convertConstType(verifyExpr(whileStmt.expr))
+	if stmtType != "bool":
+		printBadTestExpr(whileStmt.expr)
+
+	loopLevel += 1
+	verifyExpr(whileStmt.expr)
+	loopLevel -= 1
+
+	currentScope.pop()
+
+
+
 def verifyForStmt(forStmt):
 	global loopLevel
 	global loopCount
@@ -518,6 +618,8 @@ def verifyForStmt(forStmt):
 	verifyStmt(forStmt.stmt)
 
 	loopLevel -= 1
+
+	currentScope.pop()
 
 def verifyReturnStmt(retStmt):
 	global returnTypeNeeded
@@ -563,12 +665,15 @@ def verifyCall(callStmt):
 
 
 def verifyStmt(stmt):
+
 	if stmt.isPrint:
 		verifyPrint(stmt)
 	if stmt.isStmtBlock:
 		verifyAny(stmt)
 	elif stmt.stmtType == "if":
 		verifyIfStmt(stmt)
+	elif stmt.stmtType == "while":
+		verifyWhileStmt(stmt)
 	elif stmt.stmtType == "for":
 		verifyForStmt(stmt)
 	elif stmt.stmtType == "return":

@@ -7,7 +7,7 @@ def compile(fname):
     inputFile = open(fname, "r")
     outFileName = fname.split(".")[0] + ".out"
 
-    fileContents = inputFile.read()
+    fileContents = inputFile.read() + " "
     tokenList = lex.buildTokenList(fileContents)
     
     #lex.printTokens(tokenList)

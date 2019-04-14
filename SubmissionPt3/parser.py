@@ -361,7 +361,7 @@ def checkWhileStmt():
                 if checkRParen():
                     bodyStmt = checkStmt()
                     if bodyStmt.finished:
-                        whileStmt.bodyStmt = bodyStmt
+                        whileStmt.stmt = bodyStmt
                         whileStmt.finished = True
                         whileStmt.line = getLine(originalIndex)
                         whileScore -= 1

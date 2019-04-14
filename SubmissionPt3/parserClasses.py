@@ -17,6 +17,8 @@ class IRObject:
     isStmt = False
     isCall = False
     isPrint = False
+    isReadInt = False
+    isReadLine = False
     def mtabs(self, tabs):
         return ("    "*tabs)
     def printMyStuff(self,prefix, tabs):
@@ -163,7 +165,7 @@ class IfStmtClass(StmtClass):
             self.elseStmt.printMyStuff("(else)", tabs+1)
 
 class WhileStmtClass(StmtClass):
-    bodyStmt = StmtClass()
+    stmt = StmtClass()
     stmtType = "while"
     def printMyStuff(self,prefix, tabs):
         print(self.mtabs(tabs)+prefix + "WhileStmt:")
@@ -263,11 +265,13 @@ class CallClass(IRObject):
 
 class ReadIntegerClass(IRObject):
     name = ""
+    isReadInt = True
     def printMyStuff(self,prefix, tabs):
         print(self.mtabs(tabs) + prefix + "ReadIntegerExpr:")
 
 class ReadLineClass(IRObject):
     name = ""
+    isReadLine = True
     def printMyStuff(self,prefix, tabs):
         print(self.mtabs(tabs) + prefix +"ReadLineExpr:")
 
