@@ -127,6 +127,7 @@ def checkFunctionDecl():
     #get our ident
     identClass = checkIdent()
     if identClass.finished:
+        identClass.line = getLine(originalIndex)
         functionDecl.identClass = identClass
     else:
         index = originalIndex
@@ -700,7 +701,11 @@ def checkCall():
 
     if ident.finished:
         #print("YIKES")
+        ident.line = getLine(originalIndex)        
+
         call.identClass = ident
+        
+
         if checkLParen():
             #print("OH NO")
             #get actuals
@@ -788,8 +793,9 @@ def checkIdent():
     if "Identifier" in tokenList[index].flavor:
         ident.name = tokenList[index].text
         ident.finished = True
-        ident.line = getLine(index - 1)
+        ident.line = getLine(index)
         index += 1
+
     return ident
 
 def checkSemiColon():

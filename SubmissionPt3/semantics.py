@@ -273,6 +273,7 @@ def printWrongPrintParamter(printOb, index, got):
 
 def printIdentNotFoundInScope(identOb):
 	print""
+
 	print("*** Error line " + str(identOb.line) + ".")
 	print(fileContents.split("\n")[identOb.line-1])
 	print("^"*len(identOb.name))
@@ -431,7 +432,7 @@ def identTypeInScope(v): #takes an ident
 				if scopeMatches:
 					matchedType = varTypes[i]
 
-
+	
 	if matchedType == "error":
 		printIdentNotFoundInScope(v)
 
@@ -473,7 +474,6 @@ def verifyExpr(expr):
 	if exprSuperLine == -1:
 		clearSuperLineAfter = True
 		exprSuperLine = expr.line
-
 
 
 	if expr.isIdent:
@@ -523,10 +523,11 @@ def verifyExpr(expr):
 	elif expr.operator == "=":
 		rightType = convertConstType(verifyExpr(expr.rightChild))
 		if expr.leftChild.isIdent:
-			if identTypeInScope(expr.leftChild) == rightType:
+			vType = identTypeInScope(expr.leftChild);
+			if vType == rightType:
 				returnValue = "assignment"
 			else:
-				if rightType != "error":
+				if rightType != "error" and vType != "error":
 					printExprOperandError(expr, exprSuperLine, identTypeInScope(expr.leftChild), rightType, expr.operator)
 				returnValue = "error"
 	elif expr.operator == "!":
@@ -552,7 +553,7 @@ def verifyIfStmt(ifStmt):
 
 	ifCount += 1
 	currentScope.append("IF" + str(ifCount))
-	exprType = verifyExpr(ifStmt.expr)
+	exprType = convertConstType(verifyExpr(ifStmt.expr))
 
 	if exprType != "bool" and exprType != "error":
 		printBadTestExpr(ifStmt.expr)
@@ -585,11 +586,11 @@ def verifyWhileStmt(whileStmt):
 	currentScope.append("LOOP" + str(loopCount))
 
 	stmtType = convertConstType(verifyExpr(whileStmt.expr))
-	if stmtType != "bool":
+	if stmtType != "bool" and stmtType != "error":
 		printBadTestExpr(whileStmt.expr)
 
 	loopLevel += 1
-	verifyExpr(whileStmt.expr)
+	verifyStmt(whileStmt.stmt)
 	loopLevel -= 1
 
 	currentScope.pop()
@@ -606,8 +607,8 @@ def verifyForStmt(forStmt):
 	currentScope.append("LOOP" + str(loopCount))
 
 	verifyExpr(forStmt.leftExpr)
-	middleType = verifyExpr(forStmt.midExpr)
-	if middleType != "bool":
+	middleType = convertConstType(verifyExpr(forStmt.midExpr))
+	if middleType != "bool" and middleType != "error":
 		printBadTestExpr(forStmt.midExpr)
 
 
@@ -624,7 +625,7 @@ def verifyForStmt(forStmt):
 def verifyReturnStmt(retStmt):
 	global returnTypeNeeded
 	returnType = convertConstType(verifyExpr(retStmt.expr))
-	if returnType != returnTypeNeeded:
+	if returnType != returnTypeNeeded and returnType != "error":
 		printBadReturn(retStmt, returnType)
 
 
@@ -646,19 +647,60 @@ def verifyCall(callStmt):
 	callName = callStmt.identClass.name
 	returnType = "error"
 
+	sizeMissIndex = -1
+	sizeMismatch = False
+
+
+	typeMismatch = False
+
+	possibleTypeMatches = []
+
+	myParamTypes = []
+	theOneIGot = -1
+
 	for i in range(0,len(funcNames)):
 		if funcNames[i] == callName:
-			returnType = funcTypes[i]
+			#returnType = funcTypes[i]
 			#first compare the number
 			if len(funcParameters[i]) != len(callStmt.actuals):
-				printFuncParametersMismatchError(callStmt, len(callStmt.actuals), len(funcParameters[i]))
+				#printFuncParametersMismatchError(callStmt, len(callStmt.actuals), len(funcParameters[i]))
+				sizeMissIndex = i
+				sizeMismatch = True
+
 			else:
 				#we need to make sure the types all match
-				for j in range(0, len(funcParameters[i])):
-					exprType = convertConstType(verifyExpr(callStmt.actuals[j]))
-					if exprType != funcParameters[i][j]:
-						printWrongFuncParameterType(callStmt, j, exprType, funcParameters[i][j])
+				possibleTypeMatches.append(i)
 
+		
+
+	for j in range(0, len(callStmt.actuals)):
+		exprType = convertConstType(verifyExpr(callStmt.actuals[j]))
+		myParamTypes.append(exprType)
+			
+
+	gotOne = False
+	for i in possibleTypeMatches:
+		gotOne = True
+		for j in range(0,len(myParamTypes)):
+			if myParamTypes[j] != funcParameters[i][j]:
+					#printWrongFuncParameterType(callStmt, j, exprType, funcParameters[i][j])
+				gotOne = False
+		if gotOne:
+			theOneIGot = i
+
+		#if we're here, it means one didn't match
+	if not gotOne and len(possibleTypeMatches) > 0:
+		for j in range(0,len(myParamTypes)):
+			if myParamTypes[j] != funcParameters[possibleTypeMatches[0]][j]:
+				printWrongFuncParameterType(callStmt, j, exprType, funcParameters[possibleTypeMatches[0]][j])
+				#gotOne = False
+	elif not gotOne and sizeMismatch:
+		printFuncParametersMismatchError(callStmt, len(callStmt.actuals), len(funcParameters[sizeMissIndex]))
+	elif not gotOne: #we didn't even find one
+		printIdentNotFoundInScope(callStmt.identClass)
+
+	if theOneIGot > -1:
+		returnType = funcTypes[theOneIGot]
 
 	return returnType
 

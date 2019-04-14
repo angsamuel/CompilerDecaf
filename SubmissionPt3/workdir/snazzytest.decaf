@@ -1,3 +1,23 @@
-void main() {
-Print(3.5);
+int banana(int apple, bool potato){
+  apple = 5;
+  return apple;
+}
+
+void grape(){
+  int a;
+  while(true){
+    int batman;
+  }
+  for(;true;){
+    int batman;
+  }
+  if(true){
+    int batman;
+    a = 5;
+  }else{
+    batman = 5;
+  }
+  
+  batman = 5;
+  
 }
