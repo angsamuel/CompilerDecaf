@@ -28,6 +28,8 @@ ifCount = 0
 elseCount = 0
 loopCount = 0
 
+loopLevel = 0
+
 funcTypes = []
 funcParameters = [] #2d array of types
 funcNames = []
@@ -57,7 +59,14 @@ def appendVarScope():
 
 def check(ir, fc):
 	global fileContents
+	global ifCount
+	global elseCount
+	global loopCount
 	fileContents = fc
+
+	ifCount = 0
+	elseCount = 0
+	loopCount = 0
 
 	#first grab all the declarations
 	grabAllDecls(ir)
@@ -127,9 +136,11 @@ def printExprOperandError(irOb, line, leftType, rightType, operator):
 	print("*** Error line " + str(line) + ".")
 	print(fileContents.split("\n")[line-1])
 	print("^")
-	print("*** Incompatible operands: " + leftType + " " + operator + " " + rightType)
+	if leftType == "":
+		print("*** Incompatible operand: " + leftType + " " + operator + " " + rightType)
+	else:
+		print("*** Incompatible operands: " + leftType + " " + operator + " " + rightType)
 	print ""
-
 
 def printDupeIdentError(irOb):
 	global fileContents
@@ -139,6 +150,21 @@ def printDupeIdentError(irOb):
 	print("Duplicate declaration of variable/function " + irOb.identClass.name)
 	print ""
 
+def printBadTestExpr(exprOb):
+	global fileContents
+	print("*** Error line " + str(exprOb.line) + ".")
+	print(fileContents.split("\n")[exprOb.line-1])
+	print("^")
+	print("*** Test expression must have boolean type")
+	print("")
+
+def printBadBreakError(breakOb):
+	global fileContents
+	print("*** Error line " + str(breakOb.line) + ".")
+	print(fileContents.split("\n")[breakOb.line-1])
+	print("^^^^^")
+	print("*** break is only allowed inside a loop")
+	print("")
 
 
 def packageVarDecl(v):
@@ -300,7 +326,8 @@ def identTypeInScope(v): #takes an ident
 
 
 arithOps = ["*","-","+","/", "%"]
-boolOps = [">", "<", ">=", "<=", "=="]
+boolOps = ["&&", "||"]
+compOps = ["==","!=","<",">",">=","<="]
 exprSuperLine = -1
 
 
@@ -309,8 +336,10 @@ def convertConstType(typeString):
 
 def verifyExpr(expr):
 	global arithOps
+	global boolOps
 	global currentScope
 	global exprSuperLine
+	global compOps
 	returnValue = "error"
 
 	clearSuperLineAfter = False
@@ -322,14 +351,39 @@ def verifyExpr(expr):
 		returnValue = identTypeInScope(expr)
 	elif expr.isConstant:
 		returnValue = expr.constantType
-	elif expr.operator in arithOps:
+	elif expr.operator in arithOps or expr.operator in compOps:
 		rightType = convertConstType(verifyExpr(expr.rightChild))
 		leftType = convertConstType(verifyExpr(expr.leftChild))
 		if rightType != leftType:
-			printExprOperandError(expr, exprSuperLine, leftType, rightType, expr.operator)
+			if rightType != "error" and leftType != "error":
+				printExprOperandError(expr, exprSuperLine, leftType, rightType, expr.operator)
 			returnValue = "error"
 		else:
-			returnValue = rightType
+			if rightType == "error":
+				returnValue = "error"
+			elif rightType == "bool" or rightType == "assignment":
+				printExprOperandError(expr, exprSuperLine, leftType, rightType, expr.operator)
+				returnValue = "error"
+			else:
+				if expr.operator in compOps:
+					returnValue = "bool"
+				else:
+					returnValue = rightType
+	elif expr.operator in boolOps:
+		rightType = convertConstType(verifyExpr(expr.rightChild))
+		leftType = convertConstType(verifyExpr(expr.leftChild))
+		if rightType != leftType:
+			if rightType != "error" and leftType != "error":
+				printExprOperandError(expr, exprSuperLine, leftType, rightType, expr.operator)
+			returnValue = "error"
+		else:
+			if rightType == "error":
+				returnValue = "error"
+			if rightType != "bool":
+				printExprOperandError(expr, exprSuperLine, leftType, rightType, expr.operator)
+				returnValue = "error"
+			else:
+				returnValue = rightType
 	elif expr.operator == "=":
 		rightType = convertConstType(verifyExpr(expr.rightChild))
 		if expr.leftChild.isIdent:
@@ -339,16 +393,58 @@ def verifyExpr(expr):
 				if rightType != "error":
 					printExprOperandError(expr, exprSuperLine, identTypeInScope(expr.leftChild), rightType, expr.operator)
 				returnValue = "error"
-
+	elif expr.operator == "!":
+		rightType = convertConstType(verifyExpr(expr.rightChild))
+		if rightType != "bool" and rightType != "error":
+			printExprOperandError(expr, exprSuperLine, "", rightType, expr.operator)
+		else:
+			return rightType
 	if clearSuperLineAfter:
 		exprSuperLine = -1
 	return returnValue
 
 	#if we have a problem, return the type
 
+def verifyIfStmt(ifStmt):
+	global ifCount
+	global elseCount
+	global currentScope
+
+	ifCount += 1
+	currentScope.append("IF" + str(ifCount))
+	exprType = verifyExpr(ifStmt.expr)
+
+	if exprType != "bool" and exprType != "error":
+		printBadTestExpr(ifStmt.expr)
+
+	verifyStmt(ifStmt.thenStmt)
+	
+	currentScope.pop()
+
+	if ifStmt.elseStmt.finished:
+		elseCount += 1
+		currentScope.append("ELSE" + str(elseCount))
+		verifyStmt(ifStmt.elseStmt)
+		currentScope.pop()
+
+
+
+def verifyBreakStmt(breakOb):
+	global loopLevel
+	if loopLevel < 1:
+		printBadBreakError(breakOb);
+
+
 
 def verifyStmt(stmt):
-	verifyExpr(stmt.expr)
+	if stmt.isStmtBlock:
+		verifyAny(stmt)
+	elif stmt.stmtType == "if":
+		verifyIfStmt(stmt)
+	elif stmt.isBreak:
+		verifyBreakStmt(stmt)
+	else:
+		verifyExpr(stmt.expr)
 
 def verifyAny(irOb):
 	global currentScope

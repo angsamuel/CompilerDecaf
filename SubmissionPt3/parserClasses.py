@@ -14,6 +14,7 @@ class IRObject:
     isVarDecl = False
     isStmtBlock = False
     isExpr = False
+    isStmt = False
     def mtabs(self, tabs):
         return ("    "*tabs)
     def printMyStuff(self,prefix, tabs):
@@ -136,6 +137,7 @@ class ExprClass(IRObject):
 class StmtClass(IRObject):
     name = ""
     expr = ExprClass()
+    isStmt = True
     stmtType = ""
     def printMyStuff(self,prefix, tabs):
         if self.expr == None:
