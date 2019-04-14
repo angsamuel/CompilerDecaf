@@ -192,6 +192,18 @@ def printWrongFuncParameterType(callOb, index, got, needed):
 	print("*** Incompatible argument " + str(index+1) + ": " +  got + " given, " + needed + " expected")
 	print""
 
+def printWrongPrintParamter(printOb, index, got):
+	print("*** Error line " + str(printOb.line) + ".")
+	print(fileContents.split("\n")[printOb.line-1])
+	print("*** Incompatible argument " + str(index+1) + ": " + got + " given, int/bool/string expected")
+	print""
+
+def printIdentNotFoundInScope(identOb):
+	print("*** Error line " + str(identOb.line) + ".")
+	print(fileContents.split("\n")[identOb.line-1])
+	print("*** No declaration found for variable \'" + identOb.name + "\'")
+	print""
+
 	
 
 def packageVarDecl(v):
@@ -331,7 +343,7 @@ def identTypeInScope(v): #takes an ident
 	global varScopes
 	global varTypes
 
-	matchedType = "YIKES"
+	matchedType = "error"
 
 
 	for i in range(0,len(varNames)):
@@ -343,6 +355,11 @@ def identTypeInScope(v): #takes an ident
 						scopeMatches = False
 				if scopeMatches:
 					matchedType = varTypes[i]
+
+
+	if matchedType == "error":
+		printIdentNotFoundInScope(v)
+
 	return matchedType
 					#we have a possible match
 
@@ -371,6 +388,7 @@ def verifyExpr(expr):
 
 	if expr.isCall: 
 		return verifyCall(expr)
+
 
 	clearSuperLineAfter = False
 	if exprSuperLine == -1:
@@ -503,9 +521,21 @@ def verifyForStmt(forStmt):
 
 def verifyReturnStmt(retStmt):
 	global returnTypeNeeded
-	returnType = verifyExpr(retStmt.expr)
+	returnType = convertConstType(verifyExpr(retStmt.expr))
 	if returnType != returnTypeNeeded:
 		printBadReturn(retStmt, returnType)
+
+
+def verifyPrint(printStmt):
+
+	for i in range(0,len(printStmt.exprs)):
+		expr = printStmt.exprs[i]
+		typeString = convertConstType(verifyExpr(expr))
+		if typeString not in ["int", "bool", "string", "error"]:
+			printWrongPrintParamter(printStmt,i, typeString)
+
+
+
 
 def verifyCall(callStmt):
 	global funcNames
@@ -533,7 +563,8 @@ def verifyCall(callStmt):
 
 
 def verifyStmt(stmt):
-
+	if stmt.isPrint:
+		verifyPrint(stmt)
 	if stmt.isStmtBlock:
 		verifyAny(stmt)
 	elif stmt.stmtType == "if":
@@ -543,11 +574,12 @@ def verifyStmt(stmt):
 	elif stmt.stmtType == "return":
 		verifyReturnStmt(stmt)
 	elif stmt.isBreak:
-		verifyBreakStmt(stmt)	
+		verifyBreakStmt(stmt)
 	else:
 		verifyExpr(stmt.expr)
 
 def verifyAny(irOb):
+	
 	global currentScope
 	global returnTypeNeeded
 	global funcDeclSpottedDict
@@ -571,6 +603,7 @@ def verifyAny(irOb):
 	elif irOb.isVarDecl:
 		verifyVarDecl(irOb)
 	elif irOb.isStmtBlock:
+
 		for varDecl in irOb.variableDecls:
 			verifyVarDecl(varDecl)
 		for stmt in irOb.stmts:

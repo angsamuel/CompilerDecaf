@@ -16,6 +16,7 @@ class IRObject:
     isExpr = False
     isStmt = False
     isCall = False
+    isPrint = False
     def mtabs(self, tabs):
         return ("    "*tabs)
     def printMyStuff(self,prefix, tabs):
@@ -185,6 +186,7 @@ class ReturnStmtClass(StmtClass):
             print self.mtabs(tabs+1) + "Empty:"
 
 class PrintStmtClass(StmtClass):
+    isPrint = True
     def __init__(self):
         self.exprs = []
     def printMyStuff(self,prefix, tabs):

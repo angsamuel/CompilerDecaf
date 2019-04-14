@@ -1,4 +1,3 @@
 void main() {
-int a;
-a = "hello";
+Print(3.5);
 }
