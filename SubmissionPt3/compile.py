@@ -14,6 +14,7 @@ def compile(fname):
     #for t in tokenList:
         #print(t.text)
     ir = parser.parseTokenList(tokenList)
+
     semantics.check(ir, fileContents)
 
     # for t in tokenList:

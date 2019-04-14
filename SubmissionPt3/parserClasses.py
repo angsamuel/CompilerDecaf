@@ -13,6 +13,7 @@ class IRObject:
     isFuncDecl = False
     isVarDecl = False
     isStmtBlock = False
+    isExpr = False
     def mtabs(self, tabs):
         return ("    "*tabs)
     def printMyStuff(self,prefix, tabs):
@@ -95,6 +96,7 @@ class ExprClass(IRObject):
     parent = None
     leftChild = None
     rightChild = None
+    isExpr = True
     score = 0
     def printMyStuff(self, prefix, tabs):
         exprTypeString = prefix

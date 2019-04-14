@@ -122,13 +122,22 @@ def grabAllDecls(ir):
 			packageVarDecl(irOb)
 
 
+def printExprOperandError(irOb, line, leftType, rightType, operator):
+	global fileContents
+	print("*** Error line " + str(line) + ".")
+	print(fileContents.split("\n")[line-1])
+	print("^")
+	print("*** Incompatible operands: " + leftType + " " + operator + " " + rightType)
+	print ""
+
+
 def printDupeIdentError(irOb):
 	global fileContents
 	print("*** Error line " + str(irOb.line) + ".")
 	print(fileContents.split("\n")[irOb.line-1])
 	print("^" * len(irOb.identClass.name))
 	print("Duplicate declaration of variable/function " + irOb.identClass.name)
-	print""
+	print ""
 
 
 
@@ -146,23 +155,6 @@ def packageVarDecl(v):
 		tempV = v
 		v = VariableDeclClass()
 		v.variableClass = tempV
-
-	# #check for dupes in var names
-	# for i in range(0,len(varNames)):
-	# 	if  not foundDupe and varNames[i] == v.variableClass.identClass.name:
-	# 		if varScopes[i] == currentScope:
-	# 			#print(varScopes[i])
-	# 			#print(currentScope)
-	# 			#printDupeIdentError(v.variableClass)
-	# 			foundDupe = True
-
-	# #check for dupes in function names
-	# for i in range(0, len(funcNames)):
-	# 	if not foundDupe and funcNames[i] == v.variableClass.identClass.name:
-	# 		if currentScope == ["GLOBAL"]:
-	# 			#printDupeIdentError(v.variableClass)
-	# 			foundDupe = True
-
 
 	varNames.append(v.variableClass.identClass.name)
 	varTypes.append(v.variableClass.typeClass.name)
@@ -201,7 +193,6 @@ def checkStmtForVarDecls(stmt):
 
 def checkStmtBlockForVarDecls(stmtBlock):
 	for v in stmtBlock.variableDecls:
-		#print(currentScope)
 		packageVarDecl(v)
 	for s in stmtBlock.stmts:
 		checkStmtForVarDecls(s)
@@ -254,9 +245,6 @@ def verifyVarDecl(varDeclOb):
 	dupeFound = False
 	#check through func names, if we got the same scope, 
 
-	print varDeclOb.variableClass.identClass.name
-
-
 	for i in range(0,len(varNames)):
 		# print("COMPARE")
 		# print(varScopes[i])
@@ -280,6 +268,87 @@ def verifyVarDecl(varDeclOb):
 						printDupeIdentError(varDeclOb.variableClass)
 
 
+
+
+
+
+def identTypeInScope(v): #takes an ident
+	global currentScope
+	global varNames
+	global varScopes
+	global varTypes
+
+	matchedType = "YIKES"
+
+
+	for i in range(0,len(varNames)):
+		if varNames[i] == v.name:
+			if len(varScopes[i]) <= len(currentScope): #we could access this
+				scopeMatches = True
+				for j in range(0,len(varScopes[i])):
+					if varScopes[i][j] != currentScope[j]:
+						scopeMatches = False
+				if scopeMatches:
+					matchedType = varTypes[i]
+	return matchedType
+					#we have a possible match
+
+
+
+
+
+
+
+arithOps = ["*","-","+","/", "%"]
+boolOps = [">", "<", ">=", "<=", "=="]
+exprSuperLine = -1
+
+
+def convertConstType(typeString):
+	return typeString.replace("Constant","").lower()
+
+def verifyExpr(expr):
+	global arithOps
+	global currentScope
+	global exprSuperLine
+	returnValue = "error"
+
+	clearSuperLineAfter = False
+	if exprSuperLine == -1:
+		clearSuperLineAfter = True
+		exprSuperLine = expr.line
+
+	if expr.isIdent:
+		returnValue = identTypeInScope(expr)
+	elif expr.isConstant:
+		returnValue = expr.constantType
+	elif expr.operator in arithOps:
+		rightType = convertConstType(verifyExpr(expr.rightChild))
+		leftType = convertConstType(verifyExpr(expr.leftChild))
+		if rightType != leftType:
+			printExprOperandError(expr, exprSuperLine, leftType, rightType, expr.operator)
+			returnValue = "error"
+		else:
+			returnValue = rightType
+	elif expr.operator == "=":
+		rightType = convertConstType(verifyExpr(expr.rightChild))
+		if expr.leftChild.isIdent:
+			if identTypeInScope(expr.leftChild) == rightType:
+				returnValue = "assignment"
+			else:
+				if rightType != "error":
+					printExprOperandError(expr, exprSuperLine, identTypeInScope(expr.leftChild), rightType, expr.operator)
+				returnValue = "error"
+
+	if clearSuperLineAfter:
+		exprSuperLine = -1
+	return returnValue
+
+	#if we have a problem, return the type
+
+
+def verifyStmt(stmt):
+	verifyExpr(stmt.expr)
 
 def verifyAny(irOb):
 	global currentScope
@@ -305,8 +374,10 @@ def verifyAny(irOb):
 		verifyVarDecl(irOb)
 	elif irOb.isStmtBlock:
 		for varDecl in irOb.variableDecls:
-
 			verifyVarDecl(varDecl)
+		for stmt in irOb.stmts:
+			verifyStmt(stmt)
+
 
 	#evaluate expression
 

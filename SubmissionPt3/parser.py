@@ -67,7 +67,7 @@ def checkVariableDecl():
     if variable.finished and checkSemiColon():
         variableDecl.variableClass = variable
         variableDecl.finished = True
-        variableDecl.line = getLine(index-1)
+        variableDecl.line = getLine(index - 1)
     else: #else we gotta backtrack
         index = originalIndex
     return variableDecl
@@ -87,7 +87,7 @@ def checkVariable():
             variable.typeClass = typeClass
             variable.identClass = ident
             variable.finished = True
-            variable.line = getLine(index-1)
+            variable.line = getLine(index - 1)
         else:
             #print error here
             printError(index)
@@ -105,7 +105,7 @@ def checkType():
     if tokenList[index].text in types:
         typeClass.name = tokenList[index].text
         typeClass.finished = True
-        typeClass.line = getLine(index-1)
+        typeClass.line = getLine(index - 1)
         index += 1
     return typeClass
 
@@ -501,7 +501,7 @@ def checkBreakStmt():
         index+=1
         if checkSemiColon():
             breakStmt.finished = True
-            breakStmt.line = getLine(index-1)
+            breakStmt.line = getLine(index - 1)
     return breakStmt
 
 
@@ -602,7 +602,7 @@ def exprBuilder(exprTree):
                     exprTree.root = hardValue
 
                 exprTree.root.finished = True
-                exprTree.root.line = getLine(index-1)
+                exprTree.root.line = getLine(index)
                 buildingTree = False #we done
                 return exprTree.root
             else: #we found another operator
@@ -750,12 +750,12 @@ def checkConstant():
         constant.name = tokenList[index].text
         constant.constantType = tokenList[index].flavor.replace("T_","")
         constant.finished = True 
-        constant.line = getLine(index-1)
+        constant.line = getLine(index - 1)
         index += 1
         return constant
     elif "null" in tokenList[index].flavor:
         constant.finished = True
-        constant.line = getLine(index-1)
+        constant.line = getLine(index - 1)
         constant.name = "null"
         constant.constantType = "null"
         index += 1
@@ -788,7 +788,7 @@ def checkIdent():
     if "Identifier" in tokenList[index].flavor:
         ident.name = tokenList[index].text
         ident.finished = True
-        ident.line = getLine(index-1)
+        ident.line = getLine(index - 1)
         index += 1
     return ident
 
